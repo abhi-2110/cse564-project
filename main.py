@@ -1,20 +1,16 @@
 import json
 import sys
-
 import numpy as np
 import pandas
 import pylab as plt
 #from bson import json_util
 from flask import Flask,render_template
-#from pymongo import MongoClient
 from scipy.spatial.distance import cdist
 from sklearn import manifold
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import MinMaxScaler
-
-# from __future__ import division
 
 input_file = pandas.read_csv('Crime_Data_County.csv', low_memory=False)
 
@@ -145,11 +141,37 @@ def index():
     return render_template("dashboard.html")
 
 @app.route("/hospitals",methods = ['POST','GET'])
-def getcrimedata():
+def gethospitals():
     #df = pandas.read_csv('Crime_Data_State.csv')
     df = pandas.read_csv('HospitalBedsIndia.csv')
     cols = json.dumps(list(df.columns))
     df = df.fillna(int(0))
+    rows = json.dumps(df.to_dict(orient='records'), indent=2)
+    data = { 'rows': rows, 'cols': cols}
+    return data
+
+@app.route("/getconfirmedcases",methods = ['POST','GET'])
+def stackedarea():
+    start,end = 25,40
+    import pandas as pd
+    df = pd.read_csv('covid_19_india.csv')
+    states = df['State/UnionTerritory'].unique()
+    regions,confirmed = [df[df['State/UnionTerritory'] == s] for s in states],[]
+    for i,s in enumerate(states):
+        cnfrmed = list(regions[i][end-1:end].Confirmed)
+        if len(cnfrmed) == 0: continue
+        confirmed.append((cnfrmed[0],s,i))
+    confirmed = sorted(confirmed,reverse=True)
+    #Top 10 state ids
+    stateids = [k for i,j,k in confirmed[:10]]
+    states = [j for i,j,k in confirmed[:10]]
+    cnt = [ list(regions[i][start:end].Confirmed) for i in stateids]
+    df = pd.DataFrame()
+    for i,s in enumerate(states):
+        df[s] = cnt[i]
+    cols = json.dumps(list(df.columns))
+    df['total'] = np.sum(cnt,axis=0)
+    df['day'] = range(end-start)
     rows = json.dumps(df.to_dict(orient='records'), indent=2)
     data = { 'rows': rows, 'cols': cols}
     return data

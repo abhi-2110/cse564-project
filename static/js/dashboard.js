@@ -179,6 +179,7 @@ var contrast = 'darkred'
 // //    document.getElementById("btn_bubble").click();
 // }
 populate_parallel();
+drawStackedArea();
 
 function populate_slider_county_map() {
 
@@ -977,64 +978,6 @@ function populate_parallel() {
        };
        console.log(dimensions)
 
-    // var dimensions = [
-    //   {
-    //     name: "State",
-    //     scale: d3.scale.ordinal().rangePoints([0, height]),
-    //     type: String
-    //   },
-    //   {
-    //     name: "NumPrimaryHealthCenters_HMIS",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumCommunityHealthCenters_HMIS",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumSubDistrictHospitals_HMIS",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumDistrictHospitals_HMIS",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "TotalPublicHealthFacilities_HMIS",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumPublicBeds_HMIS",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumRuralHospitals_NHP18",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumRuralBeds_NHP18",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumUrbanHospitals_NHP18",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   },
-    //   {
-    //     name: "NumUrbanBeds_NHP18",
-    //     scale: d3.scale.linear().range([height, 0]),
-    //     type: Number
-    //   }
-    // ];
-
     var dragging = {};
     var foreground;
     var background;
@@ -1181,6 +1124,173 @@ function populate_parallel() {
     }
 }
 });
+}
+
+function drawStackedArea() {
+  function get_colors(n) {
+  var colors = ["#a6cee3","#1f78b4","#b2df8a","#33a02c",
+  "#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6",
+  "#6a3d9a"];
+
+   return colors[ n % colors.length];}
+
+  var margin = {top: 61, right: 140, bottom: 101, left: 50},
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+
+  $.ajax({
+   type : "POST",
+   url : '/getconfirmedcases',
+   dataType: "json",
+   data: JSON.stringify({'option': "whole"}),
+   contentType: 'application/json;charset=UTF-8',
+   success: function (data) {
+    var data = JSON.parse(data.rows)
+
+    var x = d3.scale.linear()
+        .range([0, width]);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var color = d3.scale.category10();
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+    		.ticks(d3.max(data, function(d){ return d.day; }), "s");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(5, "s");
+
+    var area = d3.svg.area()
+        .x(function(d) { return x(d.day); })
+        .y0(function(d) { return y(d.y0); })
+        .y1(function(d) { return y(d.y0 + d.y); });
+
+
+    var stack = d3.layout.stack()
+        .values(function(d) { return d.values; });
+
+    var svg = d3.select("#stackedarea").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      svg.append("text")
+        .attr("x", 0)
+        .attr("y", -40)
+        .attr("dy", "0.71em")
+        .attr("fill", "#000")
+        .text("Confirmed Corona Cases By States")
+        .style("font", "23px avenir")
+        .style("fill", "#000000");
+
+
+         svg.append("text")
+          .attr("x", 0)
+          .attr("y", 402)
+          .attr("dy", "0em")
+          .style("font", "12px avenir")
+          .style("fill", "#000000")
+          .text("This is a stacked area chart of the  time series data on Confirmed Corona Cases across different states in India.");
+
+          svg.append("text")
+          .attr("x", 0)
+          .attr("y", 402)
+          .attr("dy", "3em")
+          .style("font", "12px avenir")
+          .style("fill", "#000000")
+          .text("By Group 46")
+          .style("font-weight", "bold");
+
+         color.domain(d3.keys(data[0]).filter(function(key) {return key !== "day" && key !== "total"; }));
+
+
+      var browsers = stack(color.domain().map(function(name) {
+        return {
+          name: name,
+          values: data.map(function(d) {
+            return {day: d.day, y: d[name] * 1};
+          })
+        };
+      }));
+
+    //   // Set domains for axes
+      x.domain(d3.extent(data, function(d) { return d.day; }));
+      y.domain([0, d3.max(data, function(d){ return d.total; })]);
+
+      var browser = svg.selectAll(".browser")
+          .data(browsers)
+        	.enter().append("g")
+          .attr("class", "browser");
+
+      browser.append("path")
+          .attr("class", "area")
+          .attr("d", function(d) { return area(d.values); })
+          .style("fill", function(d,i) {
+        		return get_colors(i); });
+
+          browser.append("text")
+          .datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; })
+          .attr("transform", function(d) { return "translate(" + x(d.value.day) + "," + y(d.value.y0 + d.value.y / 2) + ")"; })
+          .attr("x", -6)
+          .attr("dy", "-0.882em")
+          .style("font", "15px avenir")
+      		.attr("transform", function(d) { return "translate(500," + y(d.value.y0 + d.value.y / 2) + ")"; })
+
+       svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis).append("text")
+       		.attr("x", 350)
+          .attr("y", 36)
+          .attr("fill", "#000")
+          .text("Days of Month")
+        	.style("font-weight", "bold");
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("transform", "rotate(-90)")
+      		.attr("x", -250)
+          .attr("y", -40)
+          .attr("dy", "0.3408em")
+          .attr("fill", "#000")
+          .text("Number of Confirmed Cases")
+       		.style("font-weight", "bold");
+
+       var legend = svg.selectAll(".legend")
+         	.data(color.domain()).enter()
+       		.append("g")
+        	.attr("class","legend")
+         .attr("transform", "translate(" + (width +20) + "," + 0+ ")");
+
+       legend.append("rect")
+         .attr("x", 0)
+         .attr("y", function(d, i) { return 20 * i; })
+         .attr("width", 10)
+         .attr("height", 10)
+         .style("fill", function(d, i) {
+         	return get_colors(i);});
+
+        legend.append("text")
+         .attr("x", 20)
+         .attr("dy", "0.75em")
+         .attr("y", function(d, i) { return 20 * i; })
+         .text(function(d) {return d});
+
+        legend.append("text")
+         .attr("x",0)
+         .attr("y",-10)
+         .text("States");
+       }
+     });
 }
 
 function radioChange(){
