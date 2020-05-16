@@ -4,10 +4,9 @@ import sys
 import numpy as np
 import pandas
 import pylab as plt
-from bson import json_util
-from flask import Flask
-from flask import render_template
-from pymongo import MongoClient
+#from bson import json_util
+from flask import Flask,render_template
+#from pymongo import MongoClient
 from scipy.spatial.distance import cdist
 from sklearn import manifold
 from sklearn.cluster import KMeans
@@ -133,17 +132,27 @@ COUNTY_DATA_FIELDS = {'rate': True, 'County Name': True, 'Murders': True, 'Rapes
 REPORT_FIELDS = {'State Abbr': True, 'Year': True, 'Crime Solved': True, 'Victim Sex': True, 'Victim Age': True, 'Victim Race': True, 'Perpetrator Sex': True, 'Perpetrator Age': True, 'Perpetrator Race': True, 'Weapon': True, '_id': False}
 ANALYSIS_FIELDS = {'id': True, 'rate': True, '_id': False}
 
-connection = MongoClient(MONGODB_HOST, MONGODB_PORT)
-state_data_collection = connection[DBS_NAME][CRIME_DATA_STATE_COLLECTION]
-county_data_collection = connection[DBS_NAME][CRIME_DATA_COUNTY_COLLECTION]
-report_collection = connection[DBS_NAME][CRIME_REPORT_COLLECTION]
-analysis_collection = connection[DBS_NAME][CRIME_ANALYSIS_COLLECTION]
+# connection = MongoClient(MONGODB_HOST, MONGODB_PORT)
+# state_data_collection = connection[DBS_NAME][CRIME_DATA_STATE_COLLECTION]
+# county_data_collection = connection[DBS_NAME][CRIME_DATA_COUNTY_COLLECTION]
+# report_collection = connection[DBS_NAME][CRIME_REPORT_COLLECTION]
+# analysis_collection = connection[DBS_NAME][CRIME_ANALYSIS_COLLECTION]
 
 app = Flask(__name__)
 
 @app.route("/")
 def index():
     return render_template("dashboard.html")
+
+@app.route("/hospitals",methods = ['POST','GET'])
+def getcrimedata():
+    #df = pandas.read_csv('Crime_Data_State.csv')
+    df = pandas.read_csv('HospitalBedsIndia.csv')
+    cols = json.dumps(list(df.columns))
+    df = df.fillna(int(0))
+    rows = json.dumps(df.to_dict(orient='records'), indent=2)
+    data = { 'rows': rows, 'cols': cols}
+    return data
 
 @app.route("/get_squareloadings")
 def getSquareLoadings():
@@ -211,7 +220,7 @@ def crime_data_county():
     county_data_projects = county_data_collection.find(projection=COUNTY_DATA_FIELDS)
     for data in county_data_projects:
         json_crime_data_county.append(data)
-    json_crime_data_county = json.dumps(json_crime_data_county, default=json_util.default)
+    json_crime_data_county = json.dumps(json_crime_data_county)#, default=json_util.default)
     connection.close()
     return json_crime_data_county
 
@@ -221,7 +230,7 @@ def crime_data_state():
     state_data_projects = state_data_collection.find(projection=STATE_DATA_FIELDS)
     for data in state_data_projects:
         json_crime_data_state.append(data)
-    json_crime_data_state = json.dumps(json_crime_data_state, default=json_util.default)
+    json_crime_data_state = json.dumps(json_crime_data_state)#, default=json_util.default)
     connection.close()
     return json_crime_data_state
 
@@ -231,7 +240,7 @@ def crime_year():
     report_projects = report_collection.find(projection=REPORT_FIELDS)
     for data in report_projects:
         json_crime_report.append(data)
-    json_crime_report = json.dumps(json_crime_report, default=json_util.default)
+    json_crime_report = json.dumps(json_crime_report)#, default=json_util.default)
     connection.close()
     return json_crime_report
 
@@ -241,7 +250,7 @@ def crime_analysis():
     analysis_projects = analysis_collection.find(projection=ANALYSIS_FIELDS)
     for data in analysis_projects:
         json_crime_analytics.append(data)
-    json_crime_analytics = json.dumps(json_crime_analytics, default=json_util.default)
+    json_crime_analytics = json.dumps(json_crime_analytics)#, default=json_util.default)
     connection.close()
     return json_crime_analytics
 
@@ -250,7 +259,7 @@ def crime_analysis():
 def us_states_json():
     with open('us.json') as data_file:
         data = json.load(data_file)
-    data = json.dumps(data, default=json_util.default)
+    data = json.dumps(data)#, default=json_util.default)
     return data
 
 if __name__ == "__main__":

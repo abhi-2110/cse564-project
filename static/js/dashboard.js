@@ -4,7 +4,7 @@ var pcaData
 var mdsData
 
 var crimeReportData
-var crimeDataState
+var crimeDataState = "";
 var crimeDataCounty
 var d3Us
 var dcUs
@@ -78,106 +78,107 @@ var countyRadarData = [];
 
 var contrast = 'darkred'
 
-queue()
-    .defer(d3.json, "/get_squareloadings")
-    .defer(d3.json, "/get_eigen_values")
-    .defer(d3.json, "/pca_analysis")
-    .defer(d3.json, "/mds_analysis")
-    .defer(d3.json, "/crime_db/crime_report")
-    .defer(d3.json, "static/geojson/us-states.json")
-    .defer(d3.json, "/crime_db/crime_data_state")
-    .defer(d3.json, "/crime_db/crime_data_county")
-    .defer(d3.json, "/us_states_json")
-    .await(initData);
-
-function initData(error, squareLoadingsJson, eigenValuesJson, pcaDataJson, mdsDataJson,
-                    crimeReportJson, dcUsJson, crimeDataStateJson, crimeDataCountyJson, d3UsJson) {
-//    console.log("Tarun", "Inside initData")
-
-    if (error) throw error;
-//    console.log("Tarun", "After error")
-
-    squareLoadings = squareLoadingsJson
-    eigenValues = eigenValuesJson
-    pcaData = pcaDataJson
-    mdsData = mdsDataJson
-
-	crimeReportData = crimeReportJson
-	crimeDataState = crimeDataStateJson
-	crimeDataCounty = crimeDataCountyJson
-	d3Us = d3UsJson
-	dcUs = dcUsJson
-
-//    console.log("Tarun Data", crimeDataCounty)
-
-    crimeDataCounty.forEach(function(d) {
-        countyName[d.id] = d["County Name"]
-        murderByCounty[d.id] = d["Murders"]
-        rapeByCounty[d.id] = d["Rapes"]
-        robberyByCounty[d.id] = d["Robberies"]
-        assaultByCounty[d.id] = d["Assaults"]
-        burglaryByCounty[d.id] = d["Burglaries"]
-        larencyByCounty[d.id] = d["Larencies"]
-        theftByCounty[d.id] = d["Thefts"]
-        arsonByCounty[d.id] = d["Arsons"]
-        populationByCounty[d.id] = d["Population"]
-        crimeByCounty[d.id] = d["Murders"] + d["Rapes"] + d["Robberies"] + d["Assaults"] +
-                                d["Burglaries"] + d["Larencies"] + d["Thefts"] + d["Arsons"]
-
-//        console.log("crimeByCounty[d.id] : ", crimeByCounty[d.id]);
-
-        if (crimeByCounty[d.id] < minCrimeCounty) {
-            minCrimeCounty = crimeByCounty[d.id]
-        }
-
-        if (crimeByCounty[d.id] > maxCrimeCounty) {
-            maxCrimeCounty = crimeByCounty[d.id]
-        }
-    });
-
-    crimeDataState.forEach(function(d) {
-        stateName[d.id] = d["State"]
-        murderByState[d.id] = d["Murders"]
-        rapeByState[d.id] = d["Rapes"]
-        robberyByState[d.id] = d["Robberies"]
-        assaultByState[d.id] = d["Assaults"]
-        burglaryByState[d.id] = d["Burglaries"]
-        larencyByState[d.id] = d["Larencies"]
-        theftByState[d.id] = d["Thefts"]
-        arsonByState[d.id] = d["Arsons"]
-        populationByState[d.id] = d["Population"]
-        crimeByState[d.id] = d["Murders"] + d["Rapes"] + d["Robberies"] + d["Assaults"] +
-                                d["Burglaries"] + d["Larencies"] + d["Thefts"] + d["Arsons"]
-
-//        console.log("crimeByState[d.id] : ", crimeByState[d.id]);
-//        console.log("stateName[d.id] : ", stateName[d.id]);
-        if (crimeByState[d.id] < minCrimeState) {
-            minCrimeState = crimeByState[d.id]
-        }
-
-        if (crimeByState[d.id] > maxCrimeState) {
-            maxCrimeState = crimeByState[d.id]
-        }
-    });
-
-    populate_dashboard();
-    populate_dimension();
-    populate_intrinsic();
-    populate_pca();
-    populate_mds();
-    populate_slider_county_map();
-    populate_slider_state_map();
-    populate_parallel();
-    document.getElementById("state_btn").checked = true;
-    console.log("Tarun", "Initiating default click")
-//    console.log("Tarun", mdsData)
-    document.getElementById("btn_dashboard").click();
-//    document.getElementById("btn_dimensions").click();
-//    document.getElementById("btn_pcamds").click();
-//    document.getElementById("btn_mapview_slider").click();
-//    document.getElementById("btn_parallel").click();
-//    document.getElementById("btn_bubble").click();
-}
+// queue()
+//     .defer(d3.json, "/get_squareloadings")
+//     .defer(d3.json, "/get_eigen_values")
+//     .defer(d3.json, "/pca_analysis")
+//     .defer(d3.json, "/mds_analysis")
+//     .defer(d3.json, "/crime_db/crime_report")
+//     .defer(d3.json, "static/geojson/us-states.json")
+//     .defer(d3.json, "/crime_db/crime_data_state")
+//     .defer(d3.json, "/crime_db/crime_data_county")
+//     .defer(d3.json, "/us_states_json")
+//     .await(initData);
+//
+// function initData(error, squareLoadingsJson, eigenValuesJson, pcaDataJson, mdsDataJson,
+//                     crimeReportJson, dcUsJson, crimeDataStateJson, crimeDataCountyJson, d3UsJson) {
+// //    console.log("Tarun", "Inside initData")
+//
+//     if (error) throw error;
+// //    console.log("Tarun", "After error")
+//
+//     squareLoadings = squareLoadingsJson
+//     eigenValues = eigenValuesJson
+//     pcaData = pcaDataJson
+//     mdsData = mdsDataJson
+//
+// 	crimeReportData = crimeReportJson
+// 	crimeDataState = crimeDataStateJson
+// 	crimeDataCounty = crimeDataCountyJson
+// 	d3Us = d3UsJson
+// 	dcUs = dcUsJson
+//
+// //    console.log("Tarun Data", crimeDataCounty)
+//
+//     crimeDataCounty.forEach(function(d) {
+//         countyName[d.id] = d["County Name"]
+//         murderByCounty[d.id] = d["Murders"]
+//         rapeByCounty[d.id] = d["Rapes"]
+//         robberyByCounty[d.id] = d["Robberies"]
+//         assaultByCounty[d.id] = d["Assaults"]
+//         burglaryByCounty[d.id] = d["Burglaries"]
+//         larencyByCounty[d.id] = d["Larencies"]
+//         theftByCounty[d.id] = d["Thefts"]
+//         arsonByCounty[d.id] = d["Arsons"]
+//         populationByCounty[d.id] = d["Population"]
+//         crimeByCounty[d.id] = d["Murders"] + d["Rapes"] + d["Robberies"] + d["Assaults"] +
+//                                 d["Burglaries"] + d["Larencies"] + d["Thefts"] + d["Arsons"]
+//
+// //        console.log("crimeByCounty[d.id] : ", crimeByCounty[d.id]);
+//
+//         if (crimeByCounty[d.id] < minCrimeCounty) {
+//             minCrimeCounty = crimeByCounty[d.id]
+//         }
+//
+//         if (crimeByCounty[d.id] > maxCrimeCounty) {
+//             maxCrimeCounty = crimeByCounty[d.id]
+//         }
+//     });
+//
+//     crimeDataState.forEach(function(d) {
+//         stateName[d.id] = d["State"]
+//         murderByState[d.id] = d["Murders"]
+//         rapeByState[d.id] = d["Rapes"]
+//         robberyByState[d.id] = d["Robberies"]
+//         assaultByState[d.id] = d["Assaults"]
+//         burglaryByState[d.id] = d["Burglaries"]
+//         larencyByState[d.id] = d["Larencies"]
+//         theftByState[d.id] = d["Thefts"]
+//         arsonByState[d.id] = d["Arsons"]
+//         populationByState[d.id] = d["Population"]
+//         crimeByState[d.id] = d["Murders"] + d["Rapes"] + d["Robberies"] + d["Assaults"] +
+//                                 d["Burglaries"] + d["Larencies"] + d["Thefts"] + d["Arsons"]
+//
+// //        console.log("crimeByState[d.id] : ", crimeByState[d.id]);
+// //        console.log("stateName[d.id] : ", stateName[d.id]);
+//         if (crimeByState[d.id] < minCrimeState) {
+//             minCrimeState = crimeByState[d.id]
+//         }
+//
+//         if (crimeByState[d.id] > maxCrimeState) {
+//             maxCrimeState = crimeByState[d.id]
+//         }
+//     });
+//
+//     populate_dashboard();
+//     populate_dimension();
+//     populate_intrinsic();
+//     populate_pca();
+//     populate_mds();
+//     populate_slider_county_map();
+//     populate_slider_state_map();
+//     populate_parallel();
+//     document.getElementById("state_btn").checked = true;
+//     console.log("Tarun", "Initiating default click")
+// //    console.log("Tarun", mdsData)
+//     document.getElementById("btn_dashboard").click();
+// //    document.getElementById("btn_dimensions").click();
+// //    document.getElementById("btn_pcamds").click();
+// //    document.getElementById("btn_mapview_slider").click();
+// //    document.getElementById("btn_parallel").click();
+// //    document.getElementById("btn_bubble").click();
+// }
+populate_parallel();
 
 function populate_slider_county_map() {
 
@@ -946,59 +947,93 @@ function populate_mds() {
               tooltip.html('');
           });
 }
-
 function populate_parallel() {
     var margin = {top: 30, right: 40, bottom: 20, left: 200};
     var width = 1260 - margin.left - margin.right;
     var height = 500 - margin.top - margin.bottom;
+    $.ajax({
+     type : "POST",
+     url : '/hospitals',
+     dataType: "json",
+     data: JSON.stringify({'option': "whole"}),
+     contentType: 'application/json;charset=UTF-8',
+     success: function (data) {
+       hospitals = JSON.parse(data.rows)
+       cols = JSON.parse(data.cols)
+       console.log(hospitals)
 
-    var dimensions = [
-      {
-        name: "State",
-        scale: d3.scale.ordinal().rangePoints([0, height]),
-        type: String
-      },
-      {
-        name: "Murders_Rate",
-        scale: d3.scale.linear().range([0, height]),
-        type: Number
-      },
-      {
-        name: "Rapes_Rate",
-        scale: d3.scale.linear().range([height, 0]),
-        type: Number
-      },
-      {
-        name: "Robberies_Rate",
-        scale: d3.scale.linear().range([height, 0]),
-        type: Number
-      },
-      {
-        name: "Assaults_Rate",
-        scale: d3.scale.linear().range([height, 0]),
-        type: Number
-      },
-      {
-        name: "Burglaries_Rate",
-        scale: d3.scale.linear().range([height, 0]),
-        type: Number
-      },
-      {
-        name: "Larencies_Rate",
-        scale: d3.scale.linear().range([height, 0]),
-        type: Number
-      },
-      {
-        name: "Thefts_Rate",
-        scale: d3.scale.linear().range([height, 0]),
-        type: Number
-      },
-      {
-        name: "Arsons_Rate",
-        scale: d3.scale.linear().range([height, 0]),
-        type: Number
-      }
-    ];
+       var dimensions = [{
+               name: "State",
+               scale: d3.scale.ordinal().rangePoints([0, height]),
+               type: String
+             }]
+       for(i=2;i<cols.length;i++){
+         var obj = {
+           name: cols[i],
+           scale: d3.scale.linear().range([height, 0]),
+           type: Number
+         };
+         dimensions.push(obj)
+       };
+       console.log(dimensions)
+
+    // var dimensions = [
+    //   {
+    //     name: "State",
+    //     scale: d3.scale.ordinal().rangePoints([0, height]),
+    //     type: String
+    //   },
+    //   {
+    //     name: "NumPrimaryHealthCenters_HMIS",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumCommunityHealthCenters_HMIS",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumSubDistrictHospitals_HMIS",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumDistrictHospitals_HMIS",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "TotalPublicHealthFacilities_HMIS",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumPublicBeds_HMIS",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumRuralHospitals_NHP18",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumRuralBeds_NHP18",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumUrbanHospitals_NHP18",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   },
+    //   {
+    //     name: "NumUrbanBeds_NHP18",
+    //     scale: d3.scale.linear().range([height, 0]),
+    //     type: Number
+    //   }
+    // ];
 
     var dragging = {};
     var foreground;
@@ -1026,28 +1061,28 @@ function populate_parallel() {
         .attr("transform", function(d) { return "translate(" + x(d.name) + ")"; });
 
     //trying to set y
-    d3.keys(crimeDataState[0]).filter(function(d) {
-        y[d]=d3.scale.linear().domain(d3.extent(crimeDataState, function(p) { return +p[d]; })).range([height, 0]);
+    d3.keys(hospitals[0]).filter(function(d) {
+        y[d]=d3.scale.linear().domain(d3.extent(hospitals, function(p) { return +p[d]; })).range([height, 0]);
         return d != "State" && y[d];
     });
 
     dimensions.forEach(function(dimension) {
         dimension.scale.domain(dimension.type === Number
-            ? d3.extent(crimeDataState, function(d) { return +d[dimension.name]; })
-            : crimeDataState.map(function(d) { return d[dimension.name]; }));
+            ? d3.extent(hospitals, function(d) { return +d[dimension.name]; })
+            : hospitals.map(function(d) { return d[dimension.name]; }));
       });
 
     var background = svg.append("g")
         .attr("class", "background")
         .selectAll("path")
-        .data(crimeDataState)
+        .data(hospitals)
         .enter().append("path")
         .attr("d", draw);
 
     var foreground = svg.append("g")
         .attr("class", "foreground")
         .selectAll("path")
-        .data(crimeDataState)
+        .data(hospitals)
         .enter().append("path")
         .attr("d", draw);
 
@@ -1062,14 +1097,15 @@ function populate_parallel() {
         .each(function(d) { d3.select(this).call(yAxis.scale(d.scale)); })
         .append("text")
         .attr("class", "title")
-        .attr("text-anchor", "middle")
-        .attr("y", -9)
+        .attr("text-anchor", "left")
+        .attr("transform", "translate(0,"+ height + ")rotate(45)")
+        //.attr("y", -9)
         .text(function(d) { return d.name; });
 
     // Rebind the axis data to simplify mouseover.
     svg.select(".vaxis").selectAll("text:not(.title)")
         .attr("class", "label")
-        .data(crimeDataState, function(d) { return d.name || d; });
+        .data(hospitals, function(d) { console.log(d); return  d.name || d; });
 
     //for brushing
     // Add a group element for each dimension.
@@ -1143,6 +1179,8 @@ function populate_parallel() {
         }) ? null : "none";
         });
     }
+}
+});
 }
 
 function radioChange(){
