@@ -1,3 +1,277 @@
+d3.tip = function() {
+    var direction = d3_tip_direction,
+        offset    = d3_tip_offset,
+        html      = d3_tip_html,
+        node      = initNode(),
+        svg       = null,
+        point     = null,
+        target    = null
+  
+    function tip(vis) {
+      svg = getSVGNode(vis)
+      point = svg.createSVGPoint()
+      document.body.appendChild(node)
+    }
+  
+    // Public - show the tooltip on the screen
+    //
+    // Returns a tip
+    tip.show = function() {
+      var args = Array.prototype.slice.call(arguments)
+      if(args[args.length - 1] instanceof SVGElement) target = args.pop()
+  
+      var content = html.apply(this, args),
+          poffset = offset.apply(this, args),
+          dir     = direction.apply(this, args),
+          nodel   = d3.select(node), i = 0,
+          coords
+  
+      nodel.html(content)
+        .style({ opacity: 1, 'pointer-events': 'all' })
+  
+      while(i--) nodel.classed(directions[i], false)
+      coords = direction_callbacks.get(dir).apply(this)
+      nodel.classed(dir, true).style({
+        top: (coords.top +  poffset[0]) + 'px',
+        left: (coords.left + poffset[1]) + 'px'
+      })
+  
+      return tip
+    }
+  
+    // Public - hide the tooltip
+    //
+    // Returns a tip
+    tip.hide = function() {
+      nodel = d3.select(node)
+      nodel.style({ opacity: 0, 'pointer-events': 'none' })
+      return tip
+    }
+  
+    // Public: Proxy attr calls to the d3 tip container.  Sets or gets attribute value.
+    //
+    // n - name of the attribute
+    // v - value of the attribute
+    //
+    // Returns tip or attribute value
+    tip.attr = function(n, v) {
+      if (arguments.length < 2 && typeof n === 'string') {
+        return d3.select(node).attr(n)
+      } else {
+        var args =  Array.prototype.slice.call(arguments)
+        d3.selection.prototype.attr.apply(d3.select(node), args)
+      }
+  
+      return tip
+    }
+  
+    // Public: Proxy style calls to the d3 tip container.  Sets or gets a style value.
+    //
+    // n - name of the property
+    // v - value of the property
+    //
+    // Returns tip or style property value
+    tip.style = function(n, v) {
+      if (arguments.length < 2 && typeof n === 'string') {
+        return d3.select(node).style(n)
+      } else {
+        var args =  Array.prototype.slice.call(arguments)
+        d3.selection.prototype.style.apply(d3.select(node), args)
+      }
+  
+      return tip
+    }
+  
+    // Public: Set or get the direction of the tooltip
+    //
+    // v - One of n(north), s(south), e(east), or w(west), nw(northwest),
+    //     sw(southwest), ne(northeast) or se(southeast)
+    //
+    // Returns tip or direction
+    tip.direction = function(v) {
+      if (!arguments.length) return direction
+      direction = v == null ? v : d3.functor(v)
+  
+      return tip
+    }
+  
+    // Public: Sets or gets the offset of the tip
+    //
+    // v - Array of [x, y] offset
+    //
+    // Returns offset or
+    tip.offset = function(v) {
+      if (!arguments.length) return offset
+      offset = v == null ? v : d3.functor(v)
+  
+      return tip
+    }
+  
+    // Public: sets or gets the html value of the tooltip
+    //
+    // v - String value of the tip
+    //
+    // Returns html value or tip
+    tip.html = function(v) {
+      if (!arguments.length) return html
+      html = v == null ? v : d3.functor(v)
+  
+      return tip
+    }
+  
+    function d3_tip_direction() { return 'n' }
+    function d3_tip_offset() { return [0, 0] }
+    function d3_tip_html() { return ' ' }
+  
+    var direction_callbacks = d3.map({
+      n:  direction_n,
+      s:  direction_s,
+      e:  direction_e,
+      w:  direction_w,
+      nw: direction_nw,
+      ne: direction_ne,
+      sw: direction_sw,
+      se: direction_se
+    }),
+  
+    directions = direction_callbacks.keys()
+  
+    function direction_n() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.n.y - node.offsetHeight,
+        left: bbox.n.x - node.offsetWidth / 2
+      }
+    }
+  
+    function direction_s() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.s.y,
+        left: bbox.s.x - node.offsetWidth / 2
+      }
+    }
+  
+    function direction_e() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.e.y - node.offsetHeight / 2,
+        left: bbox.e.x
+      }
+    }
+  
+    function direction_w() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.w.y - node.offsetHeight / 2,
+        left: bbox.w.x - node.offsetWidth
+      }
+    }
+  
+    function direction_nw() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.nw.y - node.offsetHeight,
+        left: bbox.nw.x - node.offsetWidth
+      }
+    }
+  
+    function direction_ne() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.ne.y - node.offsetHeight,
+        left: bbox.ne.x
+      }
+    }
+  
+    function direction_sw() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.sw.y,
+        left: bbox.sw.x - node.offsetWidth
+      }
+    }
+  
+    function direction_se() {
+      var bbox = getScreenBBox()
+      return {
+        top:  bbox.se.y,
+        left: bbox.e.x
+      }
+    }
+  
+    function initNode() {
+      var node = d3.select(document.createElement('div'))
+      node.style({
+        position: 'absolute',
+        opacity: 0,
+        pointerEvents: 'none',
+        boxSizing: 'border-box'
+      })
+  
+      return node.node()
+    }
+  
+    function getSVGNode(el) {
+      el = el.node()
+      if(el.tagName.toLowerCase() == 'svg')
+        return el
+  
+      return el.ownerSVGElement
+    }
+  
+    // Private - gets the screen coordinates of a shape
+    //
+    // Given a shape on the screen, will return an SVGPoint for the directions
+    // n(north), s(south), e(east), w(west), ne(northeast), se(southeast), nw(northwest),
+    // sw(southwest).
+    //
+    //    +-+-+
+    //    |   |
+    //    +   +
+    //    |   |
+    //    +-+-+
+    //
+    // Returns an Object {n, s, e, w, nw, sw, ne, se}
+    function getScreenBBox() {
+      var targetel   = target || d3.event.target,
+          bbox       = {},
+          matrix     = targetel.getScreenCTM(),
+          tbbox      = targetel.getBBox(),
+          width      = tbbox.width,
+          height     = tbbox.height,
+          x          = tbbox.x,
+          y          = tbbox.y,
+          scrollTop  = document.documentElement.scrollTop || document.body.scrollTop,
+          scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft
+  
+  
+      point.x = x + scrollLeft
+      point.y = y + scrollTop
+      bbox.nw = point.matrixTransform(matrix)
+      point.x += width
+      bbox.ne = point.matrixTransform(matrix)
+      point.y += height
+      bbox.se = point.matrixTransform(matrix)
+      point.x -= width
+      bbox.sw = point.matrixTransform(matrix)
+      point.y -= height / 2
+      bbox.w  = point.matrixTransform(matrix)
+      point.x += width
+      bbox.e = point.matrixTransform(matrix)
+      point.x -= width / 2
+      point.y -= height / 2
+      bbox.n = point.matrixTransform(matrix)
+      point.y += height
+      bbox.s = point.matrixTransform(matrix)
+  
+      return bbox
+    }
+  
+    return tip
+  };
+
+
 var squareLoadings
 var eigenValues
 var pcaData
@@ -78,108 +352,710 @@ var countyRadarData = [];
 
 var contrast = 'darkred'
 
-// queue()
-//     .defer(d3.json, "/get_squareloadings")
-//     .defer(d3.json, "/get_eigen_values")
-//     .defer(d3.json, "/pca_analysis")
-//     .defer(d3.json, "/mds_analysis")
-//     .defer(d3.json, "/crime_db/crime_report")
-//     .defer(d3.json, "static/geojson/us-states.json")
-//     .defer(d3.json, "/crime_db/crime_data_state")
-//     .defer(d3.json, "/crime_db/crime_data_county")
-//     .defer(d3.json, "/us_states_json")
-//     .await(initData);
-//
-// function initData(error, squareLoadingsJson, eigenValuesJson, pcaDataJson, mdsDataJson,
-//                     crimeReportJson, dcUsJson, crimeDataStateJson, crimeDataCountyJson, d3UsJson) {
-// //    console.log("Tarun", "Inside initData")
-//
-//     if (error) throw error;
-// //    console.log("Tarun", "After error")
-//
-//     squareLoadings = squareLoadingsJson
-//     eigenValues = eigenValuesJson
-//     pcaData = pcaDataJson
-//     mdsData = mdsDataJson
-//
-// 	crimeReportData = crimeReportJson
-// 	crimeDataState = crimeDataStateJson
-// 	crimeDataCounty = crimeDataCountyJson
-// 	d3Us = d3UsJson
-// 	dcUs = dcUsJson
-//
-// //    console.log("Tarun Data", crimeDataCounty)
-//
-//     crimeDataCounty.forEach(function(d) {
-//         countyName[d.id] = d["County Name"]
-//         murderByCounty[d.id] = d["Murders"]
-//         rapeByCounty[d.id] = d["Rapes"]
-//         robberyByCounty[d.id] = d["Robberies"]
-//         assaultByCounty[d.id] = d["Assaults"]
-//         burglaryByCounty[d.id] = d["Burglaries"]
-//         larencyByCounty[d.id] = d["Larencies"]
-//         theftByCounty[d.id] = d["Thefts"]
-//         arsonByCounty[d.id] = d["Arsons"]
-//         populationByCounty[d.id] = d["Population"]
-//         crimeByCounty[d.id] = d["Murders"] + d["Rapes"] + d["Robberies"] + d["Assaults"] +
-//                                 d["Burglaries"] + d["Larencies"] + d["Thefts"] + d["Arsons"]
-//
-// //        console.log("crimeByCounty[d.id] : ", crimeByCounty[d.id]);
-//
-//         if (crimeByCounty[d.id] < minCrimeCounty) {
-//             minCrimeCounty = crimeByCounty[d.id]
-//         }
-//
-//         if (crimeByCounty[d.id] > maxCrimeCounty) {
-//             maxCrimeCounty = crimeByCounty[d.id]
-//         }
-//     });
-//
-//     crimeDataState.forEach(function(d) {
-//         stateName[d.id] = d["State"]
-//         murderByState[d.id] = d["Murders"]
-//         rapeByState[d.id] = d["Rapes"]
-//         robberyByState[d.id] = d["Robberies"]
-//         assaultByState[d.id] = d["Assaults"]
-//         burglaryByState[d.id] = d["Burglaries"]
-//         larencyByState[d.id] = d["Larencies"]
-//         theftByState[d.id] = d["Thefts"]
-//         arsonByState[d.id] = d["Arsons"]
-//         populationByState[d.id] = d["Population"]
-//         crimeByState[d.id] = d["Murders"] + d["Rapes"] + d["Robberies"] + d["Assaults"] +
-//                                 d["Burglaries"] + d["Larencies"] + d["Thefts"] + d["Arsons"]
-//
-// //        console.log("crimeByState[d.id] : ", crimeByState[d.id]);
-// //        console.log("stateName[d.id] : ", stateName[d.id]);
-//         if (crimeByState[d.id] < minCrimeState) {
-//             minCrimeState = crimeByState[d.id]
-//         }
-//
-//         if (crimeByState[d.id] > maxCrimeState) {
-//             maxCrimeState = crimeByState[d.id]
-//         }
-//     });
-//
-//     populate_dashboard();
-//     populate_dimension();
-//     populate_intrinsic();
-//     populate_pca();
-//     populate_mds();
-//     populate_slider_county_map();
-//     populate_slider_state_map();
-//     populate_parallel();
-//     document.getElementById("state_btn").checked = true;
-//     console.log("Tarun", "Initiating default click")
-// //    console.log("Tarun", mdsData)
-//     document.getElementById("btn_dashboard").click();
-// //    document.getElementById("btn_dimensions").click();
-// //    document.getElementById("btn_pcamds").click();
-// //    document.getElementById("btn_mapview_slider").click();
-// //    document.getElementById("btn_parallel").click();
-// //    document.getElementById("btn_bubble").click();
-// }
 populate_parallel();
 drawStackedArea();
+var i, tabcontent, tablinks;
+
+// Get all elements with class="tabcontent" and hide them
+tabcontent = document.getElementsByClassName("tabcontent");
+for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+}
+
+// Get all elements with class="tablinks" and remove the class "active"
+tablinks = document.getElementsByClassName("tablinks");
+for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+}
+
+// Show the current tab, and add an "active" class to the button that opened the tab
+document.getElementById("dashboard_container").style.display = "block";
+populate_map();
+
+function dashboard_click(state)
+{
+
+    draw_time_series(state);
+    update_count(state);
+}
+
+function update_count(state)
+{
+    $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True' , function(data) {
+        updateRecovery(data);
+    });
+    $.getJSON('/get_time_series_data/' + state + '/Deaths?aggr=True' + state, function(data) {
+
+        updateDeaths(data);
+    });
+    function updateRecovery(data){
+        $('#recovered-cases').html(('<h2>' + data + '</h2>'));
+    }
+    function updateDeaths(data){
+        $('#deaths').html(('<h2>' + data + '</h2>'));
+    }
+
+}
+function draw_time_series(state)
+{
+    var metricName   = "views";
+    var metricCount  = [1, 3, 1, 2, 1, 0];
+    var metricMonths = ["2022-05-01", "2022-05-02", "2022-05-03", "2022-05-04", "2022-05-05", "2022-07-05"];
+    var optwidth        = 600;
+    var optheight       = 370;
+
+    $.getJSON('/get_time_series_data/' + state + '/Confirmed', function(data) {
+                    console.log('Sample data read', data);
+                    metricCount = data.values;
+                    metricMonths = data.dates;
+                    var metricName   = "views";
+                    var optwidth        = 600;
+                    var optheight       = 370;
+
+                    draw(metricCount, metricMonths, metricName, optwidth, optheight)
+                });
+                function draw(metricCount, metricMonths, metricName, optwidth, optheight)
+                {
+                    // console.log('Drawing time series');
+                // Combine the months and count array to make "data"
+                    var dataset = [];
+                    for(var i=0; i<metricCount.length; i++){
+                        var obj = {count: metricCount[i], month: metricMonths[i]};
+                        dataset.push(obj);
+                    }
+                
+                    // format month as a date
+                    dataset.forEach(function(d) {
+                        d.month = d3.time.format("%Y-%m-%d").parse(d.month);
+                    });
+                
+                    // sort dataset by month
+                    dataset.sort(function(x, y){
+                    return d3.ascending(x.month, y.month);
+                    });
+                
+                
+                    /*
+                    * ========================================================================
+                    *  sizing
+                    * ========================================================================
+                    */
+                
+                    /* === Focus chart === */
+                
+                    var margin	= {top: 20, right: 30, bottom: 100, left: 20},
+                        width	= optwidth - margin.left - margin.right,
+                        height	= optheight - margin.top - margin.bottom;
+                
+                    /* === Context chart === */
+                
+                    var margin_context = {top: 320, right: 30, bottom: 20, left: 20},
+                        height_context = optheight - margin_context.top - margin_context.bottom;
+                
+                    /*
+                    * ========================================================================
+                    *  x and y coordinates
+                    * ========================================================================
+                    */
+                
+                    // the date range of available data:
+                    var dataXrange = d3.extent(dataset, function(d) { return d.month; });
+                    var dataYrange = [0, d3.max(dataset, function(d) { return d.count; })];
+                
+                    // maximum date range allowed to display
+                    var mindate = dataXrange[0],  // use the range of the data
+                        maxdate = dataXrange[1];
+                
+                    var DateFormat	  =  d3.time.format("%b %Y");
+                
+                    var dynamicDateFormat = timeFormat([
+                        [d3.time.format("%Y"), function() { return true; }],// <-- how to display when Jan 1 YYYY
+                        [d3.time.format("%b %Y"), function(d) { return d.getMonth(); }],
+                        [function(){return "";}, function(d) { return d.getDate() != 1; }]
+                    ]);
+                
+                    // var dynamicDateFormat =  timeFormat([
+                    //     [d3.time.format("%Y"), function() { return true; }],
+                    //     [d3.time.format("%b"), function(d) { return d.getMonth(); }],
+                    //     [function(){return "";}, function(d) { return d.getDate() != 1; }]
+                    // ]);
+                
+                    /* === Focus Chart === */
+                
+                    var x = d3.time.scale()
+                        .range([0, (width)])
+                        .domain(dataXrange);
+                
+                    var y = d3.scale.linear()
+                        .range([height, 0])
+                        .domain(dataYrange);
+                
+                    var xAxis = d3.svg.axis()
+                        .scale(x)
+                        .orient("bottom")
+                            .tickSize(-(height))
+                        .ticks(customTickFunction)
+                        .tickFormat(dynamicDateFormat);
+                
+                    var yAxis = d3.svg.axis()
+                        .scale(y)
+                        .ticks(4)
+                        .tickSize(-(width))
+                        .orient("right");
+                
+                    /* === Context Chart === */
+                
+                    var x2 = d3.time.scale()
+                        .range([0, width])
+                        .domain([mindate, maxdate]);
+                
+                    var y2 = d3.scale.linear()
+                        .range([height_context, 0])
+                        .domain(y.domain());
+                
+                    var xAxis_context = d3.svg.axis()
+                        .scale(x2)
+                        .orient("bottom")
+                        .ticks(customTickFunction)
+                        .tickFormat(dynamicDateFormat);
+                
+                    /*
+                    * ========================================================================
+                    *  Plotted line and area variables
+                    * ========================================================================
+                    */
+                
+                    /* === Focus Chart === */
+                
+                    var line = d3.svg.line()
+                        .x(function(d) { return x(d.month); })
+                        .y(function(d) { return y(d.count); });
+                
+                    var area = d3.svg.area()
+                    .x(function(d) { return x(d.month); })
+                    .y0((height))
+                    .y1(function(d) { return y(d.count); });
+                
+                    /* === Context Chart === */
+                
+                    var area_context = d3.svg.area()
+                        .x(function(d) { return x2(d.month); })
+                        .y0((height_context))
+                        .y1(function(d) { return y2(d.count); });
+                
+                    var line_context = d3.svg.line()
+                        .x(function(d) { return x2(d.month); })
+                        .y(function(d) { return y2(d.count); });
+                
+                    /*
+                    * ========================================================================
+                    *  Variables for brushing and zooming behaviour
+                    * ========================================================================
+                    */
+                
+                    var brush = d3.svg.brush()
+                        .x(x2)
+                        .on("brush", brushed)
+                        .on("brushend", brushend);
+                
+                    var zoom = d3.behavior.zoom()
+                        .on("zoom", draw)
+                        .on("zoomend", brushend);
+                
+                    /*
+                    * ========================================================================
+                    *  Define the SVG area ("vis") and append all the layers
+                    * ========================================================================
+                    */
+                
+                    // === the main components === //
+                    // d3.select("#metric-modal").remove();
+                    d3.select("#metric-modal").selectAll('svg').remove();
+                    var vis = d3.select("#metric-modal").append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                        .attr("class", "metric-chart"); // CB -- "line-chart" -- CB //
+                
+                    vis.append("defs").append("clipPath")
+                        .attr("id", "clip")
+                        .append("rect")
+                        .attr("width", width)
+                        .attr("height", height);
+                        // clipPath is used to keep line and area from moving outside of plot area when user zooms/scrolls/brushes
+                
+                    var context = vis.append("g")
+                        .attr("class", "context")
+                        .attr("transform", "translate(" + margin_context.left + "," + margin_context.top + ")");
+                
+                    var focus = vis.append("g")
+                        .attr("class", "focus")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                
+                    var rect = vis.append("svg:rect")
+                        .attr("class", "pane")
+                        .attr("width", width)
+                        .attr("height", height)
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                        .call(zoom)
+                        .call(draw);
+                
+                    // === current date range text & zoom buttons === //
+                
+                    var display_range_group = vis.append("g")
+                        .attr("id", "buttons_group")
+                        .attr("transform", "translate(" + 0 + ","+ 0 +")");
+                
+                    var expl_text = display_range_group.append("text")
+                        .text("Showing data from: ")
+                        .style("text-anchor", "start")
+                        .attr("transform", "translate(" + 0 + ","+ 10 +")");
+                
+                    display_range_group.append("text")
+                        .attr("id", "displayDates")
+                        .text(DateFormat(dataXrange[0]) + " - " + DateFormat(dataXrange[1]))
+                        .style("text-anchor", "start")
+                        .attr("transform", "translate(" + 82 + ","+ 10 +")");
+                
+                    var expl_text = display_range_group.append("text")
+                        .text("Zoom to: ")
+                        .style("text-anchor", "start")
+                        .attr("transform", "translate(" + 180 + ","+ 10 +")");
+                
+                    // === the zooming/scaling buttons === //
+                
+                    var button_width = 40;
+                    var button_height = 14;
+                
+                    // don't show year button if < 1 year of data
+                    var dateRange  = dataXrange[1] - dataXrange[0],
+                        ms_in_year = 31540000000;
+                
+                    if (dateRange < ms_in_year)   {
+                        var button_data =["month","data"];
+                    } else {
+                        var button_data =["year","month","data"];
+                    };
+                
+                    var button = display_range_group.selectAll("g")
+                        .data(button_data)
+                        .enter().append("g")
+                        .attr("class", "scale_button")
+                        .attr("transform", function(d, i) { return "translate(" + (220 + i*button_width + i*10) + ",0)"; })
+                        .on("click", scaleDate);
+                
+                    button.append("rect")
+                        .attr("width", button_width)
+                        .attr("height", button_height)
+                        .attr("rx", 1)
+                        .attr("ry", 1);
+                
+                    button.append("text")
+                        .attr("dy", (button_height/2 + 3))
+                        .attr("dx", button_width/2)
+                        .style("text-anchor", "middle")
+                        .text(function(d) { return d; });
+                
+                    /* === focus chart === */
+                
+                    focus.append("g")
+                        .attr("class", "y axis")
+                        .call(yAxis)
+                        .attr("transform", "translate(" + (width) + ", 0)");
+                
+                    focus.append("path")
+                        .datum(dataset)
+                        .attr("class", "area")
+                        .attr("d", area);
+                
+                    focus.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + height + ")")
+                        .call(xAxis);
+                
+                    focus.append("path")
+                        .datum(dataset)
+                        .attr("class", "line")
+                        .attr("d", line);
+                
+                    /* === context chart === */
+                
+                    context.append("path")
+                        .datum(dataset)
+                        .attr("class", "area")
+                        .attr("d", area_context);
+                
+                    context.append("path")
+                        .datum(dataset)
+                        .attr("class", "line")
+                        .attr("d", line_context);
+                
+                    context.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0," + height_context + ")")
+                        .call(xAxis_context);
+                
+                    /* === brush (part of context chart)  === */
+                
+                    var brushg = context.append("g")
+                        .attr("class", "x brush")
+                        .call(brush);
+                
+                    brushg.selectAll(".extent")
+                    .attr("y", -6)
+                    .attr("height", height_context + 8);
+                    // .extent is the actual window/rectangle showing what's in focus
+                
+                    brushg.selectAll(".resize")
+                        .append("rect")
+                        .attr("class", "handle")
+                        .attr("transform", "translate(0," +  -3 + ")")
+                        .attr('rx', 2)
+                        .attr('ry', 2)
+                        .attr("height", height_context + 6)
+                        .attr("width", 3);
+                
+                    brushg.selectAll(".resize")
+                        .append("rect")
+                        .attr("class", "handle-mini")
+                        .attr("transform", "translate(-2,8)")
+                        .attr('rx', 3)
+                        .attr('ry', 3)
+                        .attr("height", (height_context/2))
+                        .attr("width", 7);
+                        // .resize are the handles on either size
+                        // of the 'window' (each is made of a set of rectangles)
+                
+                    /* === y axis title === */
+                
+                    vis.append("text")
+                        .attr("class", "y axis title")
+                        .text("Monthly " + this.metricName)
+                        .attr("x", (-(height/2)))
+                        .attr("y", 0)
+                        .attr("dy", "1em")
+                        .attr("transform", "rotate(-90)")
+                        .style("text-anchor", "middle");
+                
+                    // allows zooming before any brush action
+                    zoom.x(x);
+                
+                /*
+                * ========================================================================
+                *  Functions
+                * ========================================================================
+                */
+                
+                // === tick/date formatting functions ===
+                // from: https://stackoverflow.com/questions/20010864/d3-axis-labels-become-too-fine-grained-when-zoomed-in
+                
+                function timeFormat(formats) {
+                  return function(date) {
+                    var i = formats.length - 1, f = formats[i];
+                    while (!f[1](date)) f = formats[--i];
+                    return f[0](date);
+                  };
+                };
+                
+                function customTickFunction(t0, t1, dt)  {
+                    var labelSize = 42; //
+                    var maxTotalLabels = Math.floor(width / labelSize);
+                
+                    function step(date, offset)
+                    {
+                        date.setMonth(date.getMonth() + offset);
+                    }
+                
+                    var time = d3.time.month.ceil(t0), times = [], monthFactors = [1,3,4,12];
+                
+                    while (time < t1) times.push(new Date(+time)), step(time, 1);
+                    var timesCopy = times;
+                    var i;
+                    for(i=0 ; times.length > maxTotalLabels ; i++)
+                        times = _.filter(timesCopy, function(d){
+                            return (d.getMonth()) % monthFactors[i] == 0;
+                        });
+                
+                    return times;
+                };
+                
+                // === brush and zoom functions ===
+                
+                function brushed() {
+                
+                    x.domain(brush.empty() ? x2.domain() : brush.extent());
+                    focus.select(".area").attr("d", area);
+                    focus.select(".line").attr("d", line);
+                    focus.select(".x.axis").call(xAxis);
+                    // Reset zoom scale's domain
+                    zoom.x(x);
+                    updateDisplayDates();
+                    setYdomain();
+                
+                };
+                
+                function draw() {
+                    setYdomain();
+                    focus.select(".area").attr("d", area);
+                    focus.select(".line").attr("d", line);
+                    focus.select(".x.axis").call(xAxis);
+                    //focus.select(".y.axis").call(yAxis);
+                    // Force changing brush range
+                    brush.extent(x.domain());
+                    vis.select(".brush").call(brush);
+                    // and update the text showing range of dates.
+                    updateDisplayDates();
+                };
+                
+                function brushend() {
+                // when brush stops moving:
+                
+                    // check whether chart was scrolled out of bounds and fix,
+                    var b = brush.extent();
+                    var out_of_bounds = brush.extent().some(function(e) { return e < mindate | e > maxdate; });
+                    if (out_of_bounds){ b = moveInBounds(b) };
+                
+                };
+                
+                function updateDisplayDates() {
+                
+                    var b = brush.extent();
+                    // update the text that shows the range of displayed dates
+                    var localBrushDateStart = (brush.empty()) ? DateFormat(dataXrange[0]) : DateFormat(b[0]),
+                        localBrushDateEnd   = (brush.empty()) ? DateFormat(dataXrange[1]) : DateFormat(b[1]);
+                
+                    // Update start and end dates in upper right-hand corner
+                    d3.select("#displayDates")
+                        .text(localBrushDateStart == localBrushDateEnd ? localBrushDateStart : localBrushDateStart + " - " + localBrushDateEnd);
+                };
+                
+                function moveInBounds(b) {
+                // move back to boundaries if user pans outside min and max date.
+                
+                    var ms_in_year = 31536000000,
+                        brush_start_new,
+                        brush_end_new;
+                
+                    if       (b[0] < mindate)   { brush_start_new = mindate; }
+                    else if  (b[0] > maxdate)   { brush_start_new = new Date(maxdate.getTime() - ms_in_year); }
+                    else                        { brush_start_new = b[0]; };
+                
+                    if       (b[1] > maxdate)   { brush_end_new = maxdate; }
+                    else if  (b[1] < mindate)   { brush_end_new = new Date(mindate.getTime() + ms_in_year); }
+                    else                        { brush_end_new = b[1]; };
+                
+                    brush.extent([brush_start_new, brush_end_new]);
+                
+                    brush(d3.select(".brush").transition());
+                    brushed();
+                    draw();
+                
+                    return(brush.extent())
+                };
+                
+                function setYdomain(){
+                // this function dynamically changes the y-axis to fit the data in focus
+                
+                    // get the min and max date in focus
+                    var xleft = new Date(x.domain()[0]);
+                    var xright = new Date(x.domain()[1]);
+                
+                    // a function that finds the nearest point to the right of a point
+                    var bisectDate = d3.bisector(function(d) { return d.month; }).right;
+                
+                    // get the y value of the line at the left edge of view port:
+                    var iL = bisectDate(dataset, xleft);
+                
+                    if (dataset[iL] !== undefined && dataset[iL-1] !== undefined) {
+                
+                        var left_dateBefore = dataset[iL-1].month,
+                            left_dateAfter = dataset[iL].month;
+                
+                        var intfun = d3.interpolateNumber(dataset[iL-1].count, dataset[iL].count);
+                        var yleft = intfun((xleft-left_dateBefore)/(left_dateAfter-left_dateBefore));
+                    } else {
+                        var yleft = 0;
+                    }
+                
+                    // get the x value of the line at the right edge of view port:
+                    var iR = bisectDate(dataset, xright);
+                
+                    if (dataset[iR] !== undefined && dataset[iR-1] !== undefined) {
+                
+                        var right_dateBefore = dataset[iR-1].month,
+                            right_dateAfter = dataset[iR].month;
+                
+                        var intfun = d3.interpolateNumber(dataset[iR-1].count, dataset[iR].count);
+                        var yright = intfun((xright-right_dateBefore)/(right_dateAfter-right_dateBefore));
+                    } else {
+                        var yright = 0;
+                    }
+                
+                    // get the y values of all the actual data points that are in view
+                    var dataSubset = dataset.filter(function(d){ return d.month >= xleft && d.month <= xright; });
+                    var countSubset = [];
+                    dataSubset.map(function(d) {countSubset.push(d.count);});
+                
+                    // add the edge values of the line to the array of counts in view, get the max y;
+                    countSubset.push(yleft);
+                    countSubset.push(yright);
+                    var ymax_new = d3.max(countSubset);
+                
+                    if(ymax_new == 0){
+                        ymax_new = dataYrange[1];
+                    }
+                
+                    // reset and redraw the yaxis
+                    y.domain([0, ymax_new*1.05]);
+                    focus.select(".y.axis").call(yAxis);
+                
+                };
+                
+                function scaleDate(d,i) {
+                // action for buttons that scale focus to certain time interval
+                
+                    var b = brush.extent(),
+                        interval_ms,
+                        brush_end_new,
+                        brush_start_new;
+                
+                    if      (d == "year")   { interval_ms = 31536000000}
+                    else if (d == "month")  { interval_ms = 2592000000 };
+                
+                    if ( d == "year" | d == "month" )  {
+                
+                        if((maxdate.getTime() - b[1].getTime()) < interval_ms){
+                        // if brush is too far to the right that increasing the right-hand brush boundary would make the chart go out of bounds....
+                            brush_start_new = new Date(maxdate.getTime() - interval_ms); // ...then decrease the left-hand brush boundary...
+                            brush_end_new = maxdate; //...and set the right-hand brush boundary to the maxiumum limit.
+                        } else {
+                        // otherwise, increase the right-hand brush boundary.
+                            brush_start_new = b[0];
+                            brush_end_new = new Date(b[0].getTime() + interval_ms);
+                        };
+                
+                    } else if ( d == "data")  {
+                        brush_start_new = dataXrange[0];
+                        brush_end_new = dataXrange[1]
+                    } else {
+                        brush_start_new = b[0];
+                        brush_end_new = b[1];
+                    };
+                
+                    brush.extent([brush_start_new, brush_end_new]);
+                
+                    // now draw the brush to match our extent
+                    brush(d3.select(".brush").transition());
+                    // now fire the brushstart, brushmove, and brushend events
+                    brush.event(d3.select(".brush").transition());
+                };
+                
+                }
+
+}
+
+function populate_map() {
+    var width = 650;
+    height = 500;
+
+    var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-5, 0])
+  .html(function(d) {
+    var dataRow = countryById.get(d.properties.name);
+       if (dataRow) {
+        //    console.log(dataRow);
+           return dataRow.states + ": " + dataRow.mortality;
+       } else {
+           console.log("no dataRow", d);
+           return d.properties.name + ": No data.";
+       }
+  })
+
+    var svg = d3.select('#uschart2')
+    // var svg = d3.select('body')
+    //     .append('svg')
+    //     .attr('width', width)
+    //     .attr('height', height)
+        ;
+
+    svg.call(tip);
+
+    var projection = d3.geo.albersUsa()
+        .scale(900) // mess with this if you want
+        .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path()
+        .projection(projection);
+
+    var colorScale = d3.scale.linear().range(["#D4EEFF", "#8B0000"]).interpolate(d3.interpolateLab);
+
+    var countryById = d3.map();
+
+    // $.getJSON($SCRIPT_ROOT + url,{}, function (result) {console.log('data json !!!!!')});
+    // <script src="{{ url_for('static', filename='lib/js/dc.js') }}"></script>
+    // we use queue because we have 2 data files to load.
+    queue()
+        .defer(d3.json, 'static/data/USA.json')
+        .defer(d3.csv, "static/data/deaths_30days.csv", typeAndSet) // process
+        .await(loaded);
+
+    function typeAndSet(d) {
+        // d.mortality = +d.mortality;
+        d.mortality = parseInt(d.Deaths);
+        countryById.set(d.states, d);
+        return d;
+    }
+
+    function getColor(d) {
+        var dataRow = countryById.get(d.properties.name);
+        if (dataRow) {
+            // console.log(dataRow);
+            return colorScale(dataRow.mortality);
+        } else {
+            // console.log("no dataRow", d);
+            return "#ccc";
+        }
+    }
+
+    function loaded(error, usa, mortality) {
+
+        console.log('Loaded.....................................');
+
+        colorScale.domain(d3.extent(mortality, function(d) {return d.mortality;}));
+
+        var states = topojson.feature(usa, usa.objects.units).features;
+
+        svg.selectAll('path.states')
+            .data(states)
+            .enter()
+            .append('path')
+            .attr('class', 'states')
+            .attr('d', path)
+            .on('mouseover', tip.show)
+            .on('mouseout', tip.hide)
+            .on('click', function(d){ console.log(d, d.properties.name); dashboard_click(d.properties.name);})
+            .attr('fill', function(d,i) {
+                // console.log(d.properties.name);
+                return getColor(d);
+            })
+            .append("title");
+
+        var linear = colorScale;
+
+        svg.append("g")
+        .attr("class", "legendLinear")
+        .attr("transform", "translate(20,20)");
+
+        var legendLinear = d3.legend.color()
+        .shapeWidth(60)
+        .orient('horizontal')
+        .scale(linear);
+
+        svg.select(".legendLinear")
+        .call(legendLinear);
+
+        }
+}
 
 function populate_slider_county_map() {
 
@@ -405,7 +1281,7 @@ function pushTeamRadarData(teamData){
 
 //Draw the lengend of the radar chart
 function renderLengend(teamList) {
-    var colorscale = d3.scale.category10();
+    var colorscale = d3.scale.category20();
 
     //Initiate Legend
     var svg = d3.select("#radar_chart_state");
@@ -571,88 +1447,6 @@ function populate_dashboard() {
 };
 
 
-function populate_dimension() {
-    console.log("Tarun", "Inside populate_dimension");
-
-    var data = eigenValues;
-
-    var width = 600;
-    var height = 400;
-    var chart_width = 500;
-    var chart_height = 450;
-
-    var x = d3.scale.linear().domain([1, data.length + 0.5]).range([0, chart_width]);
-    var y = d3.scale.linear().domain([0, d3.max(data) + 0.5]).range([chart_height, 0]);
-    var xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(9);
-    var yAxis = d3.svg.axis().scale(y).orient("left");
-
-    var markerX
-    var markerY
-
-    var line = d3.svg.line()
-        .x(function(d,i) {
-            if (i == 2) {
-                markerX = x(i);
-                markerY = y(d)
-            }
-            return x(i);
-        })
-        .y(function(d) { return y(d); })
-
-    // Add an SVG element with the desired dimensions and margin.
-    var svg = d3.select("#scree").append("svg")
-
-    // create yAxis
-    svg.append("g")
-          .attr("class", "x_axis")
-          .attr("transform", "translate(105," + chart_height + ")")
-          .call(xAxis);
-
-    // Add the y-axis to the left
-    svg.append("g")
-          .attr("class", "y_axis")
-          .attr("transform", "translate(100,0)")
-          .call(yAxis);
-
-    svg.append("text")
-        .attr("class", "axis_label")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate("+ 50 +","+(height/2)+")rotate(-90)")
-        .text("Eigen Values");
-
-    svg.append("text")
-        .attr("class", "axis_label")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate("+ ((chart_width/2 + 100)) +","+ (chart_height + 50) +")")
-        .text("K");
-
-    svg.append("text")
-        .attr("class", "chart_name")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate(350,540)")
-        .text("Scree Plot for Crime Data");
-
-    svg.append("path")
-        .attr("class", "screepath")
-        .attr("d", line(data))
-        .attr("transform", "translate(165,0)");
-
-    svg.append("circle")
-              .attr("cx", markerX)
-              .attr("cy", markerY)
-              .attr("r", 6)
-              .attr("transform", "translate(165,0)")
-              .style("fill", "red")
-              .style("stroke", "red")
-
-    var th_line = svg.append("line")
-        .attr("x1", 100)
-        .attr("y1", 356)
-        .attr("x2", 600)
-        .attr("y2", 356)
-        .attr("stroke-width", 2)
-        .attr("stroke", "green")
-}
 
 function populate_intrinsic() {
     console.log("Tarun", "Inside populate_intrinsic");
@@ -748,206 +1542,6 @@ function populate_intrinsic() {
 }
 
 
-function populate_pca() {
-    console.log("Tarun", "Inside populate_pca");
-
-    var obj_array = [];
-    var min = 0, max = 0;
-
-    var feature_names = Object.keys(pcaData);
-
-    for(var i=0; i < Object.keys(pcaData[0]).length; ++i){
-        obj = {}
-        obj.x = pcaData[0][i];
-        obj.y = pcaData[1][i];
-
-        obj.clusterid = pcaData['clusterid'][i]
-        obj.col1 = pcaData[feature_names[2]][i]
-        obj.col2 = pcaData[feature_names[3]][i]
-        obj_array.push(obj);
-    }
-
-    pcaData = obj_array;
-
-    var width = 650;
-    var height = 700;
-    var chart_width = 600;
-    var chart_height = 450;
-
-    var xValue = function(d) { return d.x;};
-    var xScale = d3.scale.linear().range([0, chart_width - 30]);
-    var xMap = function(d) { return xScale(xValue(d)); };
-    var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
-
-    var yValue = function(d) { return d.y;};
-    var yScale = d3.scale.linear().range([chart_height, 0]);
-    var yMap = function(d) { return yScale(yValue(d));};
-    var yAxis = d3.svg.axis().scale(yScale).orient("left");
-
-    var cluster_color = function(d) { return d.clusterid;}
-    var color = d3.scale.category10();
-
-    var svg = d3.select("#pca_plot");
-
-    var tooltip = d3.select("body").append('div').style('position','absolute');
-
-    xScale.domain([d3.min(pcaData, xValue)-1, d3.max(pcaData, xValue)+1]);
-    yScale.domain([d3.min(pcaData, yValue)-0.2, d3.max(pcaData, yValue)+0.2]);
-
-    xAxisLine = svg.append("g")
-          .attr("transform", "translate(60," + (chart_height) + ")")
-          .attr("class", "x_axis")
-          .call(xAxis)
-
-    yAxisLine = svg.append("g")
-          .attr("transform", "translate(60,0)")
-          .attr("class", "y_axis")
-          .call(yAxis)
-
-    svg.append("text")
-            .attr("class", "axis_label")
-            .attr("text-anchor", "middle")
-            .attr("transform", "translate("+ 10 +","+(chart_height/2)+")rotate(-90)")
-            .text("Component 2");
-
-    svg.append("text")
-        .attr("class", "axis_label")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate("+ (height/2) +","+ (chart_height + 40)+")")
-        .text("Component 1");
-
-    svg.append("text")
-        .attr("class", "chart_name")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate("+ (height/2) +","+ 535 +")")
-        .text("PCA plot");
-
-    svg.selectAll(".dot")
-          .data(pcaData)
-          .enter().append("circle")
-          .attr("class", "dot")
-          .attr("cx", xMap)
-          .attr("r", 3.5)
-          .attr("cy", yMap)
-          .style("fill", function(d) { return color(cluster_color(d));})
-          .on("mouseover", function(d) {
-              tooltip.transition()
-                .style('opacity', .9)
-                .style('font-family', fontFamily)
-                .style('color','black')
-                .style('font-size', '12px')
-              tooltip.html(feature_names[2] + ":" + d.col1 + ", " + feature_names[3] + ":" + d.col2)
-                .style("top", (d3.event.pageY - 28) + "px")
-                .style("left", (d3.event.pageX + 5) + "px");
-          })
-          .on("mouseout", function(d) {
-              tooltip.transition()
-                .duration(500)
-                .style("opacity", 0);
-              tooltip.html('');
-          });
-}
-
-function populate_mds() {
-    console.log("Tarun", "Inside populate_mds");
-
-    var obj_array = [];
-    var min = 0, max = 0;
-
-    var feature_names = Object.keys(mdsData);
-
-    for(var i=0; i < Object.keys(mdsData[0]).length; ++i){
-        obj = {}
-        obj.x = mdsData[0][i];
-        obj.y = mdsData[1][i];
-
-        obj.clusterid = mdsData['clusterid'][i]
-        obj.col1 = mdsData[feature_names[2]][i]
-        obj.col2 = mdsData[feature_names[3]][i]
-        obj_array.push(obj);
-    }
-
-    mdsData = obj_array;
-
-    var width = 650;
-    var height = 700;
-
-    var chart_width = 600;
-    var chart_height = 450;
-
-    var xValue = function(d) { return d.x;};
-    var xScale = d3.scale.linear().range([0, chart_width - 30]);
-    var xMap = function(d) { return xScale(xValue(d)); };
-    var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
-
-    var yValue = function(d) { return d.y;};
-    var yScale = d3.scale.linear().range([chart_height, 0]);
-    var yMap = function(d) { return yScale(yValue(d));};
-    var yAxis = d3.svg.axis().scale(yScale).orient("left");
-
-    var cluster_color = function(d) { return d.clusterid;}
-    var color = d3.scale.category10();
-
-    var svg = d3.select("#mds_plot");
-
-    var tooltip = d3.select("body").append('div').style('position','absolute');
-
-    xScale.domain([d3.min(mdsData, xValue)-1, d3.max(mdsData, xValue)+1]);
-    yScale.domain([d3.min(mdsData, yValue)-0.2, d3.max(mdsData, yValue)+0.2]);
-
-    xAxisLine = svg.append("g")
-          .attr("transform", "translate(60," + (chart_height) + ")")
-          .attr("class", "x_axis")
-          .call(xAxis)
-
-    yAxisLine = svg.append("g")
-          .attr("transform", "translate(60,0)")
-          .attr("class", "y_axis")
-          .call(yAxis)
-
-    svg.append("text")
-            .attr("class", "axis_label")
-            .attr("text-anchor", "middle")
-            .attr("transform", "translate("+ 10 +","+(chart_height/2)+")rotate(-90)")
-            .text("Component 2");
-
-    svg.append("text")
-        .attr("class", "axis_label")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate("+ (height/2) +","+ (chart_height + 40)+")")
-        .text("Component 1");
-
-    svg.append("text")
-        .attr("class", "chart_name")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate("+ (height/2) +","+ 535 +")")
-        .text("MDS plot");
-
-    svg.selectAll(".dot")
-          .data(mdsData)
-          .enter().append("circle")
-          .attr("class", "dot")
-          .attr("cx", xMap)
-          .attr("r", 3.5)
-          .attr("cy", yMap)
-          .style("fill", function(d) { return color(cluster_color(d));})
-          .on("mouseover", function(d) {
-              tooltip.transition()
-                .style('opacity', .9)
-                .style('font-family', fontFamily)
-                .style('color','black')
-                .style('font-size', '12px')
-              tooltip.html(feature_names[2] + ":" + d.col1 + ", " + feature_names[3] + ":" + d.col2)
-                .style("top", (d3.event.pageY - 28) + "px")
-                .style("left", (d3.event.pageX + 5) + "px");
-          })
-          .on("mouseout", function(d) {
-              tooltip.transition()
-                .duration(500)
-                .style("opacity", 0);
-              tooltip.html('');
-          });
-}
 function populate_parallel() {
     var margin = {top: 30, right: 40, bottom: 20, left: 200};
     var width = 1260 - margin.left - margin.right;
@@ -1048,7 +1642,8 @@ function populate_parallel() {
     // Rebind the axis data to simplify mouseover.
     svg.select(".vaxis").selectAll("text:not(.title)")
         .attr("class", "label")
-        .data(hospitals, function(d) { console.log(d); return  d.name || d; });
+        .data(hospitals, function(d) { 
+            return  d.name || d; });
 
     //for brushing
     // Add a group element for each dimension.

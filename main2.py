@@ -1,19 +1,23 @@
 import json
 import sys
+
 import numpy as np
 import pandas
 import pylab as plt
-#from bson import json_util
-from flask import Flask,render_template
+# from bson import json_util
+from flask import Flask
+from flask import render_template
+# from pymongo import MongoClient
 from scipy.spatial.distance import cdist
 from sklearn import manifold
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import MinMaxScaler
-import pandas as pd
-import glob
-from flask import request
+from flask import Flask, request, send_from_directory
+
+# from __future__ import division
+
 input_file = pandas.read_csv('Crime_Data_County.csv', low_memory=False)
 
 loadingVector = {}
@@ -105,12 +109,12 @@ def plot_intrinsic_dimensionality_pca(data, k):
     return squaredLoadings
 
 # plotElbow()
-clustering()
+# clustering()
 
-generate_eig_values(data)
-squared_loadings = plot_intrinsic_dimensionality_pca(data, 3)
-imp_fetures = sorted(range(len(squared_loadings)), key=lambda k: squared_loadings[k], reverse=True)
-print(imp_fetures)
+# generate_eig_values(data)
+# squared_loadings = plot_intrinsic_dimensionality_pca(data, 3)
+# imp_fetures = sorted(range(len(squared_loadings)), key=lambda k: squared_loadings[k], reverse=True)
+# print(imp_fetures)
 
 
 MONGODB_HOST = 'localhost'
@@ -136,87 +140,65 @@ ANALYSIS_FIELDS = {'id': True, 'rate': True, '_id': False}
 # report_collection = connection[DBS_NAME][CRIME_REPORT_COLLECTION]
 # analysis_collection = connection[DBS_NAME][CRIME_ANALYSIS_COLLECTION]
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 
 @app.route("/")
 def index():
     return render_template("dashboard.html")
-    # return render_template("test_ts.html")
 
+@app.route("/get_squareloadings")
+def getSquareLoadings():
+    global loadingVector
+    return pandas.json.dumps(loadingVector)
 
-@app.route("/hospitals", methods = ['POST','GET'])
-def gethospitals():
-    #df = pandas.read_csv('Crime_Data_State.csv')
-    df = pandas.read_csv('HospitalBedsIndia.csv')
-    cols = json.dumps(list(df.columns))
-    df = df.fillna(int(0))
-    rows = json.dumps(df.to_dict(orient='records'), indent=2)
-    data = { 'rows': rows, 'cols': cols}
-    return data
+@app.route("/get_eigen_values")
+def get_eigen_values():
+    # print("Inside get_eigen_values")
+    global eigenValues
+    return pandas.json.dumps(eigenValues)
 
-@app.route("/getconfirmedcases",methods = ['POST','GET'])
-def stackedarea():
-    start,end = 25,40
-    import pandas as pd
-    df = pd.read_csv('covid_19_india.csv')
-    states = df['State/UnionTerritory'].unique()
-    regions,confirmed = [df[df['State/UnionTerritory'] == s] for s in states],[]
-    for i,s in enumerate(states):
-        cnfrmed = list(regions[i][end-1:end].Confirmed)
-        if len(cnfrmed) == 0: continue
-        confirmed.append((cnfrmed[0],s,i))
-    confirmed = sorted(confirmed,reverse=True)
-    #Top 10 state ids
-    stateids = [k for i,j,k in confirmed[:10]]
-    states = [j for i,j,k in confirmed[:10]]
-    cnt = [ list(regions[i][start:end].Confirmed) for i in stateids]
-    df = pd.DataFrame()
-    for i,s in enumerate(states):
-        df[s] = cnt[i]
-    cols = json.dumps(list(df.columns))
-    df['total'] = np.sum(cnt,axis=0)
-    df['day'] = range(end-start)
-    rows = json.dumps(df.to_dict(orient='records'), indent=2)
-    data = { 'rows': rows, 'cols': cols}
-    return data
+@app.route("/crime_db/crime_data_state")
+def crime_data_state():
+    json_crime_data_state = []
+    state_data_projects = state_data_collection.find(projection=STATE_DATA_FIELDS)
+    for data in state_data_projects:
+        json_crime_data_state.append(data)
+    json_crime_data_state = json.dumps(json_crime_data_state, default=json_util.default)
+    connection.close()
+    return json_crime_data_state
+
+@app.route("/crime_db/crime_report")
+def crime_year():
+    json_crime_report = []
+    report_projects = report_collection.find(projection=REPORT_FIELDS)
+    for data in report_projects:
+        json_crime_report.append(data)
+    json_crime_report = json.dumps(json_crime_report, default=json_util.default)
+    connection.close()
+    return json_crime_report
+
+@app.route("/crime_db/crime_analysis")
+def crime_analysis():
+    json_crime_analytics = []
+    analysis_projects = analysis_collection.find(projection=ANALYSIS_FIELDS)
+    for data in analysis_projects:
+        json_crime_analytics.append(data)
+    json_crime_analytics = json.dumps(json_crime_analytics, default=json_util.default)
+    connection.close()
+    return json_crime_analytics
 
 
 @app.route("/us_states_json")
 def us_states_json():
     with open('us.json') as data_file:
         data = json.load(data_file)
-    data = json.dumps(data)#, default=json_util.default)
+    data = json.dumps(data)
     return data
 
-@app.route("/get_time_series_data/<state>/<column>")
-def time_series_data(state, column):
-    isaggr = request.args.get('aggr', False)
-    print('req state:', state)
-    df_aggr = pd.DataFrame()
-    files = glob.glob('nssac-ncov-data-country-state/*')
-    for file_path in files:
-        if file_path.endswith('csv'):
-            df = pd.read_csv(file_path)
-            df = df[df.name == state]
-            df_aggr = pd.concat([df_aggr, df])
-    df_aggr = df_aggr.sort_values('Last Update')
-    if not isaggr:
-        return {"values": df_aggr[column].tolist(), "dates": df_aggr['Last Update'].map(lambda x: x[:10]).tolist()}
-    return str(df_aggr[column].sum())
-
-# @app.route("/get_time_series_aggr_data/<state>/<data_type>")
-# def time_series_data(state):
-#     print('req state:', state)
-#     df_aggr = pd.DataFrame()
-#     files = glob.glob('nssac-ncov-data-country-state/*')
-#     for file_path in files:
-#         if file_path.endswith('csv'):
-#             df = pd.read_csv(file_path)
-#             df = df[df.name == state]
-#             df_aggr = pd.concat([df_aggr, df])
-#     df_aggr = df_aggr.sort_values('Last Update')
-#
-#     return {"values": df_aggr['Confirmed'].tolist(), "dates": df_aggr['Last Update'].map(lambda x: x[:10]).tolist()}
+@app.route('/static/data/<path>')
+def send_js(path):
+    # print(path)
+    return send_from_directory('static/data', path)
 
 if __name__ == "__main__":
     app.run('localhost', '5050')
