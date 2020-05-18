@@ -371,11 +371,14 @@ for (i = 0; i < tablinks.length; i++) {
 // Show the current tab, and add an "active" class to the button that opened the tab
 document.getElementById("dashboard_container").style.display = "block";
 populate_map();
-draw_time_series(state);
-// update_count(state);
+draw_time_series('all');
+draw_pie_chart_wrapper('all');
+// var num_recovered=1, num_deaths=1;
+// var num_recovered, num_deaths;
+update_count('all');
 function dashboard_click(state)
 {
-    var recovered, deaths;
+    // var recovered, deaths;
     draw_time_series(state);
     update_count(state);
     // console.log('click ->', window.num_recovered,  window.num_deaths);
@@ -383,7 +386,9 @@ function dashboard_click(state)
 }
 function draw_pie_chart_wrapper(state, startDate='', endDate='')
 {
-    // var num_recovered, num_deaths;
+    // var num_recovered=1, num_deaths=1;
+    // num_recovered=1;
+    // num_deaths=1;
     $.when(
         $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True&startDate='+startDate+'&endDate='+endDate , function(data) {
              num_recovered = data;
@@ -392,7 +397,8 @@ function draw_pie_chart_wrapper(state, startDate='', endDate='')
             num_deaths = data;
         })
     ).then(
-
+        (typeof num_recovered === 'undefined' || typeof num_deaths === 'undefined') ?
+        draw_pie_chart(4464470, 2060053, state):
         draw_pie_chart(num_recovered, num_deaths, state)
     );
     
@@ -451,10 +457,10 @@ var data = [{"label":"Deaths", "value":num_deaths },
             {"label":"Admitted", "value":num_deaths * 2.5 }];
 change(data);
 // console.log('rand', randomData(), data);
-d3.select(".randomize")
-	.on("click", function(){
-		change(randomData());
-	});
+// d3.select(".randomize")
+// 	.on("click", function(){
+// 		change(randomData());
+// 	});
 
 
 function change(data) {
@@ -986,6 +992,7 @@ function draw_time_series(state)
                     draw_pie_chart_wrapper(state, startdate, enddate);
                     console.log('brush End', startdate, enddate, state);
                     populate_map(startdate, enddate);
+                    // update_count(state);
                 };
                 
                 function updateDisplayDates() {
