@@ -42,7 +42,7 @@
         
         /* CB: padding to display better on bl.ocks.org */
         #metric-modal {
-            padding: 64px;
+            padding: 30px;
         }
         
         #metric-modal .metric-chart rect.plot-background{
@@ -145,6 +145,15 @@
             stroke-width: 2px;
             fill: none;
         }
+        .pietooltip {
+        background-color: rgba(0,0,0,0.75);
+        padding: 15px;
+        border-radius: 2px;
+        font-family: sans-serif;
+        color: white;
+        pointer-events: none;
+        box-shadow: 0 0 5px #999999;
+        }
         </style>
 </head>
 <body>
@@ -211,7 +220,7 @@
 
             <!-- Map -->
             <div class="col-lg-6">
-                <div class="chart-wrapper" style="height:480px;">
+                <div class="chart-wrapper" style="height:450px;">
                     <div class="chart-title">
                         Distribution
                     </div>

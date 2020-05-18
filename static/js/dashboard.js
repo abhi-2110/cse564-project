@@ -406,10 +406,41 @@ function draw_pie_chart_wrapper(state, startDate='', endDate='')
 function draw_pie_chart(num_recovered, num_deaths, state)
 {       
     console.log('pie chart ->', state, num_recovered,  num_deaths);
+    // var tip = d3.tip()
+    //     .attr('class', 'd3-tip')
+    //     .offset([-5, 0])
+    //     .html(function(d) {
+    //         var dataRow = countryById.get(d.properties.name);
+    //         if (dataRow) {
+    //             return dataRow.states + ": " + dataRow.mortality;
+    //         } else {
+    //             console.log("no dataRow", d);
+    //             return d.properties.name + ": 0";
+    //         }
+    //     });
+    
     d3.select("#pie-chart").selectAll('svg').remove();
     var svg = d3.select("#pie-chart")
-    .append("svg")
-    .append("g")
+    
+
+    var Tooltip = svg
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("height", "30px")
+        .style("width", "65px")
+        .style("position", "absolute")
+        .style("background-color", "rgba(0,0,0,0.75)")
+        .style("color", "white")
+        // .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
+        .style("font-family", "sans-serif")
+        ;
+
+    svg = svg.append("svg")
+    .append("g");
 
     svg.append("g")
         .attr("class", "slices");
@@ -417,6 +448,8 @@ function draw_pie_chart(num_recovered, num_deaths, state)
         .attr("class", "labels");
     svg.append("g")
         .attr("class", "lines");
+    
+    // svg.call(tip);
 
     var width = 400,
     height = 300,
@@ -464,15 +497,45 @@ change(data);
 
 
 function change(data) {
-
+    console.log(data, pie(data), key);
 	/* ------- PIE SLICES -------*/
 	var slice = svg.select(".slices").selectAll("path.slice")
-		.data(pie(data), key);
+        .data(pie(data), key)
+        ;
 
 	slice.enter()
 		.insert("path")
 		.style("fill", function(d) { return color(d.data.label); })
-		.attr("class", "slice");
+        .attr("class", "slice")
+        .on('mouseover', function(d)
+        { 
+            //   var tip = d3.tip()
+            // .attr('class', 'd3-tip')
+            // .offset([-5, 0])
+            // .html("djhbjhbjhb");
+            // .html(function(d) {
+            //     console.log('--', d);
+            //     return d.data.value;
+            //     // var dataRow = countryById.get(d.properties.name);
+            //     // if (dataRow) {
+            //     //     return dataRow.states + ": " + dataRow.mortality;
+            //     // } else {
+            //     //     console.log("no dataRow", d);
+            //     //     return d.properties.name + ": 0";
+            //     // }
+            // });
+            console.log(d, d3.event.pageX, d3.event.pageY);
+            Tooltip.html(d.data.value).style("opacity", 1).style("visibility", "visible")
+            .style("top", (d3.event.pageY - 620) + "px")
+                .style("left", (d3.event.pageX - 780) + "px");
+                ;
+            // tip.show();
+            
+        })
+        .on('mouseout', function(d)
+                {Tooltip.style("opacity", 0);}
+        )
+        ;
 
 	slice		
 		.transition().duration(1000)
@@ -498,7 +561,8 @@ function change(data) {
 		.attr("dy", ".35em")
 		.text(function(d) {
 			return d.data.label;
-		});
+        })
+        ;
 	
 	function midAngle(d){
 		return d.startAngle + (d.endAngle - d.startAngle)/2;
@@ -556,13 +620,14 @@ function change(data) {
     };
 }
 
-function update_count(state)
+function update_count(state, startDate='', endDate='')
 {
-    $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True' , function(data) {
+    $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True&startDate='+startDate+'&endDate='+endDate , function(data) {
+        console.log('update_count', '/get_time_series_data/' + state + '/Recovered?aggr=True&startDate='+startDate+'&endDate='+endDate );
         window.num_recovered = data;
         updateRecovery(data);
     });
-    $.getJSON('/get_time_series_data/' + state + '/Deaths?aggr=True' + state, function(data) {
+    $.getJSON('/get_time_series_data/' + state + '/Deaths?aggr=True&startDate=' +startDate+'&endDate='+endDate, function(data) {
         window.num_deaths = data;
         updateDeaths(data);
     });
@@ -990,9 +1055,9 @@ function draw_time_series(state)
                     // console.log('brush End', startdate, enddate, state);
                     window.temp = startdate;
                     draw_pie_chart_wrapper(state, startdate, enddate);
-                    console.log('brush End', startdate, enddate, state);
+                    // console.log('brush End', startdate, enddate, state);
                     populate_map(startdate, enddate);
-                    // update_count(state);
+                    update_count(state, startdate, enddate);
                 };
                 
                 function updateDisplayDates() {
@@ -1137,17 +1202,17 @@ function populate_map(startDate='', endDate='') {
     height = 500;
 
     var tip = d3.tip()
-  .attr('class', 'd3-tip')
-  .offset([-5, 0])
-  .html(function(d) {
-    var dataRow = countryById.get(d.properties.name);
-       if (dataRow) {
-           return dataRow.states + ": " + dataRow.mortality;
-       } else {
-           console.log("no dataRow", d);
-           return d.properties.name + ": 0";
-       }
-  })
+    .attr('class', 'd3-tip')
+    .offset([-5, 0])
+    .html(function(d) {
+        var dataRow = countryById.get(d.properties.name);
+        if (dataRow) {
+            return dataRow.states + ": " + dataRow.mortality;
+        } else {
+            console.log("no dataRow", d);
+            return d.properties.name + ": 0";
+        }
+    })
     d3.select('#uschart2').selectAll('*').remove();
     var svg = d3.select('#uschart2')
     // var svg = d3.select('body')
@@ -1202,7 +1267,7 @@ function populate_map(startDate='', endDate='') {
         colorScale.domain(d3.extent(mortality, function(d) {return d.mortality;}));
 
         var states = topojson.feature(usa, usa.objects.units).features;
-
+        console.log(states);
         svg.selectAll('path.states')
             .data(states)
             .enter()
@@ -1235,135 +1300,6 @@ function populate_map(startDate='', endDate='') {
 
         }
 }
-
-function populate_slider_county_map() {
-
-    console.log("Tarun", "Inside populate_silder_county_map")
-
-    var width = 960;
-    var height = 600;
-    var noOfIntervals = 6;
-
-//    console.log("Max crime county", maxCrimeCounty);
-//    console.log("Min crime county", minCrimeCounty);
-
-    var diffCounty = maxCrimeCounty - minCrimeCounty;
-
-    colorCounty = d3.scale.linear()
-        .domain([diffCounty/100000, diffCounty/10000, diffCounty/1000, diffCounty/100, diffCounty/10, diffCounty])
-        .range(colorbrewer.Purples[noOfIntervals]);
-
-    var path = d3.geo.path();
-    var svg = d3.select("#map_slide_county")
-
-    var legend_svg = d3.select("#legend_area_county")
-
-    var sampleNumerical = [diffCounty/100000, diffCounty/10000, diffCounty/1000, diffCounty/100, diffCounty/10, diffCounty];
-    var sampleThreshold = d3.scale.threshold().domain(sampleNumerical).range(colorbrewer.Purples[noOfIntervals]);
-    var horizontalLegend = d3.svg.legend().units("Crimes").cellWidth(80).cellHeight(15).inputScale(sampleThreshold).cellStepping(100);
-    legend_svg.append("g").attr("class", "legend").call(horizontalLegend);
-
-//    console.log("Tarun", "Appending paths in Map");
-    svg.append("g")
-        .attr("class", "counties")
-        .selectAll("path")
-        .data(topojson.feature(d3Us, d3Us.objects.counties).features)
-        .enter().append("path")
-        .style("fill", function(d) { return colorCounty(crimeByCounty[d.id]); })
-        .attr("d", path)
-        .on("click", stateClick)
-        .append("title")
-        .text(function(d) { return countyName[d.id] + "\n" +
-                                   murderByCounty[d.id] + " Murders\n" +
-                                   rapeByCounty[d.id] + " Rapes\n" +
-                                   robberyByCounty[d.id] + " Robberies\n" +
-                                   assaultByCounty[d.id] + " Assaults\n" +
-                                   burglaryByCounty[d.id] + " Bulglaries\n" +
-                                   larencyByCounty[d.id] + " Larencies\n" +
-                                   theftByCounty[d.id] + " Thefts\n" +
-                                   arsonByCounty[d.id] + " Arsons\n" +
-                                   crimeByCounty[d.id] + " Total Crimes\n" +
-                                   populationByCounty[d.id] + " Total Population"; });
-
-    svg.append("path")
-        .datum(topojson.mesh(d3Us, d3Us.objects.states, function(a, b) { return a !== b; }))
-        .attr("class", "county-borders")
-        .attr("d", path);
-
-    console.log("Tarun", "Hi there");
-}
-
-
-function populate_slider_state_map() {
-
-    console.log("Tarun", "Inside populate_silder_state_map")
-
-    var width = 960;
-    var height = 600;
-    var noOfIntervals = 6;
-
-    console.log("Max crime state", maxCrimeState);
-    console.log("Min crime state", minCrimeState);
-
-    var diffState = maxCrimeState - minCrimeState
-    console.log("diffState", diffState);
-
-    colorState = d3.scale.linear()
-        .domain([diffState/100000, diffState/10000, diffState/1000, diffState/100, diffState/10, diffState])
-        .range(colorbrewer.Purples[noOfIntervals]);
-
-    var path = d3.geo.path();
-    var svg = d3.select("#map_slide_state")
-
-    var legend_svg = d3.select("#legend_area_state")
-
-    var sampleNumerical = [diffState/100000, diffState/10000, diffState/1000, diffState/100, diffState/10, diffState];
-    var sampleThreshold = d3.scale.threshold().domain(sampleNumerical).range(colorbrewer.Purples[noOfIntervals]);
-    var horizontalLegend = d3.svg.legend().units("Crimes").cellWidth(80).cellHeight(15).inputScale(sampleThreshold).cellStepping(100);
-    legend_svg.append("g").attr("class", "legend").call(horizontalLegend);
-
-//    console.log("Tarun", "Appending paths in Map");
-    svg.append("g")
-        .attr("class", "states")
-        .selectAll("path")
-        .data(topojson.feature(d3Us, d3Us.objects.states).features)
-        .enter().append("path")
-        .style("fill", function(d) { return colorState(crimeByState[d.id]); })
-        .attr("d", path)
-        .on("click", stateClick)
-        .append("title")
-        .text(function(d) { return stateName[d.id] + "\n" +
-                                   murderByState[d.id] + " Murders\n" +
-                                   rapeByState[d.id] + " Rapes\n" +
-                                   robberyByState[d.id] + " Robberies\n" +
-                                   assaultByState[d.id] + " Assaults\n" +
-                                   burglaryByState[d.id] + " Bulglaries\n" +
-                                   larencyByState[d.id] + " Larencies\n" +
-                                   theftByState[d.id] + " Thefts\n" +
-                                   arsonByState[d.id] + " Arsons\n" +
-                                   crimeByState[d.id] + " Total Crimes\n" +
-                                   populationByState[d.id] + " Total Population"; });
-
-    svg.append("path")
-        .datum(topojson.mesh(d3Us, d3Us.objects.states, function(a, b) { return a !== b; }))
-        .attr("class", "state-borders")
-        .attr("d", path);
-
-    console.log("Tarun", "Hi there");
-
-}
-
-function teamDataset(teamRadarData) {
-    return teamRadarData.map(function(d) {
-        console.log("render", d.id)
-        return {
-            id: d.id,
-            axes: d.axes.map(function(axis) {
-                return { axis: axis.axis, value: axis.value };})
-        };
-    });
-}
-
 
 function stateClick(d) {
     console.log("----->>>>", d.id)
