@@ -131,7 +131,19 @@
         #metric-modal .metric-chart text#displayDates  {
             font-weight: bold;
         }
-        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        path.slice{
+	    stroke-width:2px;
+        }
+
+        polyline{
+            opacity: .3;
+            stroke: black;
+            stroke-width: 2px;
+            fill: none;
         }
         </style>
 </head>
@@ -139,9 +151,6 @@
 
     <div class="tab">
       <button class="tablinks" onclick="openTabClick(event, 'dashboard_container', 1)" id="btn_dashboard">Dashboard</button>
-      <button class="tablinks" onclick="openTabClick(event, 'dimension_container', 2)" id="btn_dimensions">Dimensionality</button>
-      <button class="tablinks" onclick="openTabClick(event, 'pcamds_container', 3)" id="btn_pcamds">PCA/MDS</button>
-      <button class="tablinks" onclick="openTabClick(event, 'slider_map_container', 4)" id="btn_mapview_slider">Map</button>
       <button class="tablinks" onclick="openTabClick(event, 'parallel_container', 5)" id="btn_parallel">Parallel Coordinates</button>
     </div>
 
@@ -171,10 +180,11 @@
                     <div class="col-lg-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Victim Race
+                                Total deaths
                             </div>
 
                             <div class="chart-stage">
+                                <div id="deaths"></div>
                                 <div id="victim-race-pie-chart" style="transform: translate(15px, 0px)"></div>
                             </div>
                         </div>
@@ -185,10 +195,11 @@
                     <div class="col-lg-6">
                         <div class="chart-wrapper">
                             <div class="chart-title">
-                                Weapon Used
+                                Recovered Cases
                             </div>
 
                             <div class="chart-stage">
+                                <div id="recovered-cases"></div>
                                 <div id="weapon-used-row-chart"></div>
                             </div>
                         </div>
@@ -200,7 +211,7 @@
 
             <!-- Map -->
             <div class="col-lg-6">
-                <div class="chart-wrapper" style="height:500px;">
+                <div class="chart-wrapper" style="height:480px;">
                     <div class="chart-title">
                         Distribution
                     </div>
@@ -214,31 +225,32 @@
             <!-- Map -->
 
             <!-- Metric 1 -->
-            <div class="col-lg-3">
+            <div class="col-lg-6">
                 <div class="chart-wrapper">
                     <div class="chart-title">
                         Total Deaths
                     </div>
 
-                    <div class="chart-stage">
-                        <div id="deaths"></div>
+                    <div class="chart-stage" style="height:200px">
+                        <div id="pie-chart"></div>
+                        <!-- <div id="deaths"></div> -->
                     </div>
                 </div>
             </div>
             <!-- Metric 1 -->
 
             <!-- Metric 2 -->
-            <div class="col-lg-3">
+            <!-- <div class="col-lg-3">
                 <div class="chart-wrapper">
                     <div class="chart-title">
                         Recovered cases
                     </div>
 
                     <div class="chart-stage">
-                        <div id="recovered-cases"></div>
+                        <!-- <div id="recovered-cases"></div> -->
                     </div>
                 </div>
-            </div>
+            </div> -->
             <!-- Metric 2 -->
 
         </div>

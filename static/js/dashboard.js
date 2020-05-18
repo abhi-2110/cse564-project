@@ -371,21 +371,193 @@ for (i = 0; i < tablinks.length; i++) {
 // Show the current tab, and add an "active" class to the button that opened the tab
 document.getElementById("dashboard_container").style.display = "block";
 populate_map();
-
+draw_time_series(state);
+// update_count(state);
 function dashboard_click(state)
 {
-
+    var recovered, deaths;
     draw_time_series(state);
     update_count(state);
+    // console.log('click ->', window.num_recovered,  window.num_deaths);
+    draw_pie_chart_wrapper(state);
+}
+function draw_pie_chart_wrapper(state, startDate='', endDate='')
+{
+    // var num_recovered, num_deaths;
+    $.when(
+        $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True&startDate='+startDate+'&endDate='+endDate , function(data) {
+             num_recovered = data;
+        }),
+        $.getJSON('/get_time_series_data/' + state + '/Deaths?aggr=True&startDate=' +startDate+'&endDate='+endDate, function(data) {
+            num_deaths = data;
+        })
+    ).then(
+
+        draw_pie_chart(num_recovered, num_deaths, state)
+    );
+    
+}
+function draw_pie_chart(num_recovered, num_deaths, state)
+{       
+    console.log('pie chart ->', state, num_recovered,  num_deaths);
+    d3.select("#pie-chart").selectAll('svg').remove();
+    var svg = d3.select("#pie-chart")
+    .append("svg")
+    .append("g")
+
+    svg.append("g")
+        .attr("class", "slices");
+    svg.append("g")
+        .attr("class", "labels");
+    svg.append("g")
+        .attr("class", "lines");
+
+    var width = 400,
+    height = 300,
+	radius = Math.min(width, height) / 2;
+    var anglesRange = 0.5 * Math.PI;
+    var pie = d3.layout.pie()
+	.sort(null)
+	.value(function(d) {
+		return d.value;
+    })
+    .startAngle( anglesRange * -1)
+    .endAngle( anglesRange);
+
+var arc = d3.svg.arc()
+	.outerRadius(radius * 0.9)
+	.innerRadius(radius * 0.5);
+
+var outerArc = d3.svg.arc()
+	.innerRadius(radius * 0.95)
+	.outerRadius(radius * 0.95);
+
+svg.attr("transform", "translate(" + (width / 2 + 100) + "," + height / 2 + ")");
+
+var key = function(d){ return d.data.label; };
+
+var color = d3.scale.ordinal()
+	.domain(["Deaths", "Recovered", "Admitted"])
+	.range(["#98abc5", "#8a89a6", "#7b6888"]);
+
+function randomData (){
+	var labels = color.domain();
+	return labels.map(function(label){
+		return { label: label, value: Math.random() }
+	});
+}
+var data = [{"label":"Deaths", "value":num_deaths }, 
+            {"label":"Recovered", "value":num_recovered },
+            {"label":"Admitted", "value":num_deaths * 2.5 }];
+change(data);
+// console.log('rand', randomData(), data);
+d3.select(".randomize")
+	.on("click", function(){
+		change(randomData());
+	});
+
+
+function change(data) {
+
+	/* ------- PIE SLICES -------*/
+	var slice = svg.select(".slices").selectAll("path.slice")
+		.data(pie(data), key);
+
+	slice.enter()
+		.insert("path")
+		.style("fill", function(d) { return color(d.data.label); })
+		.attr("class", "slice");
+
+	slice		
+		.transition().duration(1000)
+		.attrTween("d", function(d) {
+			this._current = this._current || d;
+			var interpolate = d3.interpolate(this._current, d);
+			this._current = interpolate(0);
+			return function(t) {
+				return arc(interpolate(t));
+			};
+		})
+
+	slice.exit()
+		.remove();
+
+	/* ------- TEXT LABELS -------*/
+
+	var text = svg.select(".labels").selectAll("text")
+		.data(pie(data), key);
+
+	text.enter()
+		.append("text")
+		.attr("dy", ".35em")
+		.text(function(d) {
+			return d.data.label;
+		});
+	
+	function midAngle(d){
+		return d.startAngle + (d.endAngle - d.startAngle)/2;
+	}
+
+	text.transition().duration(1000)
+		.attrTween("transform", function(d) {
+			this._current = this._current || d;
+			var interpolate = d3.interpolate(this._current, d);
+			this._current = interpolate(0);
+			return function(t) {
+				var d2 = interpolate(t);
+                var pos = outerArc.centroid(d2);
+                // console.log(midAngle(d2), midAngle(d2) * (180/Math.PI), d2.data.label);
+				pos[0] = radius * (midAngle(d2) > 0 ? 1 : -1);
+				return "translate("+ pos +")";
+			};
+		})
+		.styleTween("text-anchor", function(d){
+			this._current = this._current || d;
+			var interpolate = d3.interpolate(this._current, d);
+			this._current = interpolate(0);
+			return function(t) {
+				var d2 = interpolate(t);
+				return midAngle(d2) > 0 ? "start":"end";
+			};
+		});
+
+	text.exit()
+		.remove();
+
+	/* ------- SLICE TO TEXT POLYLINES -------*/
+
+	var polyline = svg.select(".lines").selectAll("polyline")
+		.data(pie(data), key);
+	
+	polyline.enter()
+		.append("polyline");
+
+	polyline.transition().duration(1000)
+		.attrTween("points", function(d){
+			this._current = this._current || d;
+			var interpolate = d3.interpolate(this._current, d);
+			this._current = interpolate(0);
+			return function(t) {
+				var d2 = interpolate(t);
+				var pos = outerArc.centroid(d2);
+				pos[0] = radius * 0.95 * (midAngle(d2) > 0 ? 1 : -1);
+				return [arc.centroid(d2), outerArc.centroid(d2), pos];
+			};			
+		});
+	
+	polyline.exit()
+		.remove();
+    };
 }
 
 function update_count(state)
 {
     $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True' , function(data) {
+        window.num_recovered = data;
         updateRecovery(data);
     });
     $.getJSON('/get_time_series_data/' + state + '/Deaths?aggr=True' + state, function(data) {
-
+        window.num_deaths = data;
         updateDeaths(data);
     });
     function updateRecovery(data){
@@ -394,21 +566,16 @@ function update_count(state)
     function updateDeaths(data){
         $('#deaths').html(('<h2>' + data + '</h2>'));
     }
-
+    // console.log('update_count ->', window.num_recovered,  window.num_deaths);
 }
 function draw_time_series(state)
 {
-    var metricName   = "views";
-    var metricCount  = [1, 3, 1, 2, 1, 0];
-    var metricMonths = ["2022-05-01", "2022-05-02", "2022-05-03", "2022-05-04", "2022-05-05", "2022-07-05"];
-    var optwidth        = 600;
-    var optheight       = 370;
 
     $.getJSON('/get_time_series_data/' + state + '/Confirmed', function(data) {
-                    console.log('Sample data read', data);
-                    metricCount = data.values;
-                    metricMonths = data.dates;
-                    var metricName   = "views";
+                    // console.log('Sample data read', data);
+                    var metricCount = data.values;
+                    var metricMonths = data.dates;
+                    var metricName   = "";
                     var optwidth        = 600;
                     var optheight       = 370;
 
@@ -660,7 +827,7 @@ function draw_time_series(state)
                     focus.append("g")
                         .attr("class", "y axis")
                         .call(yAxis)
-                        .attr("transform", "translate(" + (width) + ", 0)");
+                        .attr("transform", "translate(" + (width-50) + ", 0)");
                 
                     focus.append("path")
                         .datum(dataset)
@@ -729,7 +896,7 @@ function draw_time_series(state)
                 
                     vis.append("text")
                         .attr("class", "y axis title")
-                        .text("Monthly " + this.metricName)
+                        .text("Number of cases " + metricName)
                         .attr("x", (-(height/2)))
                         .attr("y", 0)
                         .attr("dy", "1em")
@@ -781,7 +948,6 @@ function draw_time_series(state)
                 // === brush and zoom functions ===
                 
                 function brushed() {
-                
                     x.domain(brush.empty() ? x2.domain() : brush.extent());
                     focus.select(".area").attr("d", area);
                     focus.select(".line").attr("d", line);
@@ -790,7 +956,6 @@ function draw_time_series(state)
                     zoom.x(x);
                     updateDisplayDates();
                     setYdomain();
-                
                 };
                 
                 function draw() {
@@ -813,7 +978,14 @@ function draw_time_series(state)
                     var b = brush.extent();
                     var out_of_bounds = brush.extent().some(function(e) { return e < mindate | e > maxdate; });
                     if (out_of_bounds){ b = moveInBounds(b) };
-                
+
+                    var startdate = new Date(brush.extent()[0]).toLocaleDateString();
+                    var enddate = new Date(brush.extent()[1]).toLocaleDateString();
+                    // console.log('brush End', startdate, enddate, state);
+                    window.temp = startdate;
+                    draw_pie_chart_wrapper(state, startdate, enddate);
+                    console.log('brush End', startdate, enddate, state);
+                    populate_map(startdate, enddate);
                 };
                 
                 function updateDisplayDates() {
@@ -953,7 +1125,7 @@ function draw_time_series(state)
 
 }
 
-function populate_map() {
+function populate_map(startDate='', endDate='') {
     var width = 650;
     height = 500;
 
@@ -963,14 +1135,13 @@ function populate_map() {
   .html(function(d) {
     var dataRow = countryById.get(d.properties.name);
        if (dataRow) {
-        //    console.log(dataRow);
            return dataRow.states + ": " + dataRow.mortality;
        } else {
            console.log("no dataRow", d);
-           return d.properties.name + ": No data.";
+           return d.properties.name + ": 0";
        }
   })
-
+    d3.select('#uschart2').selectAll('*').remove();
     var svg = d3.select('#uschart2')
     // var svg = d3.select('body')
     //     .append('svg')
@@ -994,9 +1165,11 @@ function populate_map() {
     // $.getJSON($SCRIPT_ROOT + url,{}, function (result) {console.log('data json !!!!!')});
     // <script src="{{ url_for('static', filename='lib/js/dc.js') }}"></script>
     // we use queue because we have 2 data files to load.
+    console.log('Map', "http://localhost:5050/get_map_data?startDate="+ startDate +'&endDate=' + endDate)
     queue()
         .defer(d3.json, 'static/data/USA.json')
-        .defer(d3.csv, "static/data/deaths_30days.csv", typeAndSet) // process
+        // .defer(d3.csv, "static/data/covid19_usa_aggr_complete.csv", typeAndSet) // process
+        .defer(d3.csv, "http://localhost:5050/get_map_data?startDate="+ startDate +'&endDate=' + endDate, typeAndSet)
         .await(loaded);
 
     function typeAndSet(d) {
@@ -1019,8 +1192,6 @@ function populate_map() {
 
     function loaded(error, usa, mortality) {
 
-        console.log('Loaded.....................................');
-
         colorScale.domain(d3.extent(mortality, function(d) {return d.mortality;}));
 
         var states = topojson.feature(usa, usa.objects.units).features;
@@ -1033,7 +1204,8 @@ function populate_map() {
             .attr('d', path)
             .on('mouseover', tip.show)
             .on('mouseout', tip.hide)
-            .on('click', function(d){ console.log(d, d.properties.name); dashboard_click(d.properties.name);})
+            .on('click', function(d){ //console.log(d, d.properties.name); 
+                dashboard_click(d.properties.name);})
             .attr('fill', function(d,i) {
                 // console.log(d.properties.name);
                 return getColor(d);
@@ -1310,235 +1482,6 @@ function renderLengend(teamList) {
         .attr("font-size", "10px")
         .attr("fill", "#737373")
         .text(function(d) {  return state_view ? stateName[d] : countyName[d]; });
-}
-
-function populate_dashboard() {
-
-    //Create a Crossfilter instance
-    year_ndx = crossfilter(crimeReportData);
-
-    console.log("Tarun", "Inside populate_dashboard")
-//    console.log("Tarun", "Defining dimensions")
-
-	//Define Dimensions
-    state_abbr_dim = year_ndx.dimension(function(d) { return d["State Abbr"]; });
-    year_dim = year_ndx.dimension(function(d) { return d["Year"]; });
-    crime_solved_dim = year_ndx.dimension(function(d) { return d["Crime Solved"]; });
-    victim_sex_dim = year_ndx.dimension(function(d) { return d["Victim Sex"]; });
-    victim_age_dim = year_ndx.dimension(function(d) { return d["Victim Age"]; });
-    victim_race_dim = year_ndx.dimension(function(d) { return d["Victim Race"]; });
-    prepetrator_sex_dim = year_ndx.dimension(function(d) { return d["Perpetrator Sex"]; });
-    prepetrator_age_dim = year_ndx.dimension(function(d) { return d["Perpetrator Age"]; });
-    prepetrator_race_dim = year_ndx.dimension(function(d) { return d["Perpetrator Race"]; });
-    weapon_dim = year_ndx.dimension(function(d) { return d["Weapon"]; });
-
-//    console.log("Tarun", "Calculating Metrices")
-//    console.log("Tarun", state_abbr_dim)
-//	Calculate metrics
-    var all = year_ndx.groupAll();
-//    console.log("Tarun", all);
-    var numMurdersYear = year_dim.group();
-    var totalMurdersByStates = state_abbr_dim.group().reduceSum(function(d) {return 1;});
-    var max_murders = totalMurdersByStates.top(1)[0].value;
-//	console.log("Tarun", max_murders)
-
-	//Define values (to be used in charts)
-	var minYear = year_dim.bottom(1)[0]["Year"];
-	var maxYear = year_dim.top(1)[0]["Year"];
-//	console.log("Tarun", minYear + ", " + maxYear)
-
-    var casesByVictimRaceType = victim_race_dim.group();
-    var casesByWeaponType = weapon_dim.group();
-
-//    console.log("Tarun", "Defining charts")
-    //Charts
-	timeChart = dc.barChart("#time-chart");
-	weaponUsedChart = dc.rowChart("#weapon-used-row-chart");
-	usChart = dc.geoChoroplethChart("#us-chart");
-	murderCountND = dc.numberDisplay("#murder-count-nd");
-	solvedCasesND = dc.numberDisplay("#solved-cases-nd");
-	victimRacePieChart = dc.pieChart("#victim-race-pie-chart");
-
-	murderCountND
-		.formatNumber(d3.format("d"))
-		.valueAccessor(function(d){return d; })
-		.group(all);
-
-	solvedCasesND
-		.formatNumber(d3.format("d"))
-		.valueAccessor(function(d){return Math.ceil(d/3); })
-		.group(all)
-
-	timeChart
-		.width(600)
-		.height(160)
-		.margins({top: 10, right: 50, bottom: 30, left: 50})
-		.dimension(year_dim)
-		.group(numMurdersYear)
-		.transitionDuration(500)
-		.x(d3.scale.linear().domain([minYear, maxYear]))
-		.elasticY(true)
-		/*.xAxisLabel("Year")*/
-		.yAxisLabel("Murders")
-		.yAxis().ticks(4);
-
-	weaponUsedChart
-		.width(300)
-		.height(250)
-        .dimension(weapon_dim)
-        .group(casesByWeaponType)
-        .elasticX(true)
-        .xAxis().ticks(4);
-
-//    console.log("Tarun", totalVotesByStates)
-
-	usChart.width(1000)
-		.height(330)
-		.dimension(state_abbr_dim)
-		.group(totalMurdersByStates)
-		.colors(["#E2F2FF", "#C4E4FF", "#9ED2FF", "#81C5FF", "#6BBAFF", "#51AEFF", "#36A2FF", "#1E96FF", "#0089FF", "#0061B5"])
-		.colorDomain([max_murders*0.1, max_murders*0.2, max_murders*0.3, max_murders*0.4, max_murders*0.5,
-		                max_murders*0.6, max_murders*0.7, max_murders*0.8, max_murders*0.9, max_murders])
-		.overlayGeoJson(dcUs["features"], "state", function (d) {
-			return d.properties.name;
-		})
-		.projection(d3.geo.albersUsa()
-    				.scale(600)
-    				.translate([340, 150]))
-		.title(function (p) {
-			return "State: " + p["key"]
-					+ "\n"
-					+ "Total murdders: " + Math.round(p["value"]);
-		})
-
-    victimRacePieChart
-        .width(250)
-        .height(250)
-        .slicesCap(5)
-        .innerRadius(50)
-        .dimension(victim_race_dim)
-        .group(casesByVictimRaceType)
-        .renderLabel(true);
-
-    dc.renderAll();
-//    console.log("Tarun", "Rendering everything")
-
-    var sampleNumerical = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    var sampleThreshold = d3.scale.threshold().domain(sampleNumerical)
-                            .range(["#E2F2FF", "#C4E4FF", "#9ED2FF", "#81C5FF", "#6BBAFF", "#51AEFF", "#36A2FF", "#1E96FF", "#0089FF", "#0061B5"]);
-    var horizontalLegend = d3.svg.legend().units("").cellWidth(20).cellHeight(10).inputScale(sampleThreshold).cellStepping(0);
-//
-    usChart.svg().append("g").attr("class", "legend-dash").attr("transform", "translate(0,318)").call(horizontalLegend);
-
-    function addXAxis(chartToUpdate, displayText)
-    {
-        chartToUpdate.svg()
-                    .append("text")
-                    .attr("class", "x-axis-label")
-                    .attr("text-anchor", "middle")
-                    .attr("x", chartToUpdate.width()/2-20)
-                    .attr("y", chartToUpdate.height()-2)
-                    .text(displayText);
-    }
-
-    addXAxis(timeChart, "Year");
-    addXAxis(weaponUsedChart, "Murders");
-    addXAxis(usChart, "Distribution of Murders across United States");
-};
-
-
-
-function populate_intrinsic() {
-    console.log("Tarun", "Inside populate_intrinsic");
-
-    loadingVector = squareLoadings;
-
-    var feature_names = Object.keys(loadingVector);
-//    console.log("Tarun", feature_names);
-
-    var feature_loadings = []
-
-    for (var i=0; i<feature_names.length; i++) {
-        feature_loadings[i] = loadingVector[feature_names[i]];
-    }
-
-//    console.log("Tarun", feature_loadings);
-    var width = 600;
-    var bar_height = 40;
-    var padding = 6;
-    var left_width = 80;
-    var height = (bar_height + padding) * feature_names.length;
-
-    svg = d3.select("#dim_bar")
-      .style("transform", "translate(20px, 0px)");
-
-    var x = d3.scale.linear()
-       .domain([0, d3.max(feature_loadings)])
-       .range([0, width - 150]);
-
-    var y = d3.scale.ordinal()
-        .domain(feature_loadings)
-        .rangeBands([0, (bar_height + 2 * padding) * feature_loadings.length]);
-
-    var y2 = d3.scale.ordinal()
-        .domain(feature_names)
-        .rangeBands([0, (bar_height + 2 * padding) * feature_names.length]);
-
-    var line = svg.selectAll("line")
-       .data(x.ticks(10))
-       .enter().append("line")
-       .attr("class", "barline")
-       .attr("x1", function(d) { return x(d) + left_width; })
-       .attr("x2", function(d) { return x(d) + left_width; })
-       .attr("y1", 0)
-       .attr("y2", (bar_height + padding * 2) * feature_names.length);
-
-    var rule = svg.selectAll(".rule")
-       .data(x.ticks(10))
-       .enter().append("text")
-       .attr("class", "barrule")
-       .attr("x", function(d) { return x(d) + left_width; })
-       .attr("y", 0)
-       .attr("dy", -6)
-       .attr("text-anchor", "middle")
-       .attr("font-size", 10)
-       .text(String);
-
-    var rect = svg.selectAll("rect")
-       .data(feature_loadings)
-       .enter().append("rect")
-       .attr("x", left_width)
-       .attr("y", function(d) { return y(d) + padding; })
-       .attr("width", x)
-       .attr("height", bar_height)
-
-    var loadings = svg.selectAll("loadings")
-       .data(feature_loadings)
-       .enter().append("text")
-       .attr("x", function(d) { return x(d) + left_width; })
-       .attr("y", function(d){ return y(d) + y.rangeBand()/2; })
-       .attr("dx", 105)
-       .attr("dy", ".36em")
-       .attr("text-anchor", "end")
-       .attr('class', 'loadings')
-       .text(String);
-
-    var names = svg.selectAll("names")
-       .data(feature_names)
-       .enter().append("text")
-       .attr("x", 0)
-       .attr("y", function(d){ return y2(d) + y.rangeBand()/2; } )
-       .attr("dy", ".36em")
-       .attr("text-anchor", "start")
-       .attr('class', 'names')
-       .text(String);
-
-    svg.append("text")
-        .attr("class", "chart_name")
-        .attr("text-anchor", "middle")
-        .attr("transform", "translate(350,540)")
-        .text("Square loading of all the features");
-
 }
 
 

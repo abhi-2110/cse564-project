@@ -15,7 +15,7 @@ import pandas as pd
 import glob
 from flask import request
 input_file = pandas.read_csv('Crime_Data_County.csv', low_memory=False)
-
+import datetime
 loadingVector = {}
 
 columns = ['Murders', 'Rapes', 'Robberies', 'Assaults', 'Burglaries', 'Larencies', 'Thefts', 'Arsons', 'Population']
@@ -142,6 +142,7 @@ app = Flask(__name__)
 def index():
     return render_template("dashboard.html")
     # return render_template("test_ts.html")
+    # return render_template("test_pie.html")
 
 
 @app.route("/hospitals", methods = ['POST','GET'])
@@ -191,32 +192,43 @@ def us_states_json():
 @app.route("/get_time_series_data/<state>/<column>")
 def time_series_data(state, column):
     isaggr = request.args.get('aggr', False)
-    print('req state:', state)
-    df_aggr = pd.DataFrame()
-    files = glob.glob('nssac-ncov-data-country-state/*')
-    for file_path in files:
-        if file_path.endswith('csv'):
-            df = pd.read_csv(file_path)
-            df = df[df.name == state]
-            df_aggr = pd.concat([df_aggr, df])
+    startDate = request.args.get('startDate', '01/01/2020') or '01/01/2020'
+    endDate = request.args.get('endDate', '5/20/2020') or '5/20/2020'
+    startDate = datetime.datetime.strptime(startDate, '%m/%d/%Y')
+    endDate = datetime.datetime.strptime(endDate, '%m/%d/%Y')
+
+    print(startDate, endDate)
+    df_aggr = pd.read_csv('static/data/covid19_usa_complete.csv')
+    if state!='' and state!='all':
+        df_aggr = df_aggr[df_aggr.name == state]
     df_aggr = df_aggr.sort_values('Last Update')
+    df_aggr['date'] = df_aggr['Last Update'].map(lambda x: datetime.datetime.strptime(x[:10], '%Y-%m-%d'))
+    datecheck = (df_aggr['date'] >= startDate) & (df_aggr['date'] <= endDate)
+    df_aggr = df_aggr[datecheck]
     if not isaggr:
         return {"values": df_aggr[column].tolist(), "dates": df_aggr['Last Update'].map(lambda x: x[:10]).tolist()}
     return str(df_aggr[column].sum())
 
-# @app.route("/get_time_series_aggr_data/<state>/<data_type>")
-# def time_series_data(state):
-#     print('req state:', state)
-#     df_aggr = pd.DataFrame()
-#     files = glob.glob('nssac-ncov-data-country-state/*')
-#     for file_path in files:
-#         if file_path.endswith('csv'):
-#             df = pd.read_csv(file_path)
-#             df = df[df.name == state]
-#             df_aggr = pd.concat([df_aggr, df])
-#     df_aggr = df_aggr.sort_values('Last Update')
-#
-#     return {"values": df_aggr['Confirmed'].tolist(), "dates": df_aggr['Last Update'].map(lambda x: x[:10]).tolist()}
+
+@app.route("/get_map_data")
+def get_map_data():
+    startDate = request.args.get('startDate', '01/01/2020') or '01/01/2020'
+    endDate = request.args.get('endDate', '5/20/2020') or '5/20/2020'
+    startDate = datetime.datetime.strptime(startDate, '%m/%d/%Y')
+    endDate = datetime.datetime.strptime(endDate, '%m/%d/%Y')
+
+    print(startDate, endDate, request.args.get('startDate'), request.args.get('endDate'))
+    df_aggr = pd.read_csv('static/data/covid19_usa_complete.csv')
+    df_aggr = df_aggr.rename(columns = {'name':'states'})
+    # if state!='' and state!='all':
+    #     df_aggr = df_aggr[df_aggr.states == state]
+    df_aggr = df_aggr.sort_values('Last Update')
+    df_aggr['date'] = df_aggr['Last Update'].map(lambda x: datetime.datetime.strptime(x[:10], '%Y-%m-%d'))
+    datecheck = (df_aggr['date'] >= startDate) & (df_aggr['date'] <= endDate)
+    df_aggr = df_aggr[datecheck]
+    df_aggr = df_aggr.groupby('states').agg({'Confirmed': 'sum', 'Deaths': 'sum', 'Recovered': 'sum', 'Region': 'any'})
+    # print(df_aggr)
+    return df_aggr[['Confirmed', 'Deaths', 'Recovered']].to_csv(header=True)
 
 if __name__ == "__main__":
     app.run('localhost', '5050')

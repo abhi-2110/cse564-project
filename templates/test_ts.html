@@ -134,7 +134,7 @@ var metricMonths = ["2020-05-01", "2020-05-02", "2020-05-03", "2020-05-04", "202
 var optwidth        = 600;
 var optheight       = 370;
 
-$.getJSON('/get_time_series_data/New York', function(data) {
+$.getJSON('/get_time_series_data/New York/Confirmed', function(data) {
                   console.log('Sample data read', data);
                   metricCount = data.values;
                   metricMonths = data.dates;
@@ -393,7 +393,7 @@ function draw(metricCount, metricMonths, metricName, optwidth, optheight)
     focus.append("g")
         .attr("class", "y axis")
         .call(yAxis)
-        .attr("transform", "translate(" + (width) + ", 0)");
+        .attr("transform", "translate(" + (width - 10) + ", 0)");
 
     focus.append("path")
         .datum(dataset)
