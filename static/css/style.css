@@ -6,8 +6,9 @@
     word-wrap: break-word;
     background-color: #fff;
     background-clip: border-box;
-    border: 3px solid rgba(15, 171, 34, 0.16);
+    border: 3px solid rgba(136, 136, 136, 0.16);
     border-radius: 0.25rem;
+    margin-bottom: 7px;
 }
 
 .card-body {
