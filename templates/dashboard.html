@@ -19,87 +19,87 @@
         /******************************************
         * Metric Modal Chart (Views, Downloads, Citations)
         ********************************************/
-        
+
         /* When there is no data ...*/
-        
+
         #metric-modal .metric-chart text {
             fill: #565656;
             font-size: 9px;
             font-family: Helvetica, Arial, "sans serif";
         }
-        
+
         #metric-modal .metric-chart text.no-data {
             font-size: 16px;
             font-weight: 100;
             fill:#d0d0d0;
         }
-        
+
         #metric-modal .metric-chart rect.no-data {
             fill: #f5f5f5;
         }
-        
+
         /* When there is data ...*/
-        
+
         /* CB: padding to display better on bl.ocks.org */
         #metric-modal {
-            padding: 30px;
+            padding: 10px;
         }
-        
+
         #metric-modal .metric-chart rect.plot-background{
             fill: white;
         }
-        
+
         #metric-modal .metric-chart path.line {
             fill: none;
             stroke: #00AA8D; /* default, changed in each theme */
             stroke-width: 1.5px;
             clip-path: url(#clip);
         }
-        
+
         #metric-modal .metric-chart path.area {
             fill: #00AA8D; /* CB default, changed in each theme */
             opacity: 0.6;
             clip-path: url(#clip);
         }
-        
+
         #metric-modal .metric-chart .axis {
             shape-rendering: crispEdges;
         }
-        
+
         #metric-modal .metric-chart .x.axis .domain{
             display:none;
         }
-        
+
         #metric-modal .metric-chart .x.axis line {
             stroke: white;
             opacity: 0.4;
         }
-        
+
         #metric-modal .metric-chart .context .x.axis line {
             display: none;
         }
-        
+
         #metric-modal .metric-chart .y.axis .domain{
             display: none;
         }
-        
+
         #metric-modal .metric-chart .y.axis.title{
             font-size: 13px;
             font-weight: 100;
         }
-        
+
         #metric-modal .metric-chart .y.axis line {
             stroke: #565656;
             stroke-dasharray: 2,2;
             stroke-opacity: 0.3;
         }
-        
+
         #metric-modal .metric-chart .brush .extent {
           fill-opacity: .07;
           shape-rendering: crispEdges;
           clip-path: url(#clip);
         }
-        
+
         #metric-modal .metric-chart rect.pane {
             cursor: move;
             fill: none;
@@ -109,17 +109,17 @@
         #metric-modal .metric-chart .resize .handle {
             fill: #555;
         }
-        
+
         #metric-modal .metric-chart .resize .handle-mini {
             fill: white;
             stroke-width: 1px;
             stroke: #555;
         }
-        
+
         #metric-modal .metric-chart .scale_button {
             cursor: pointer;
         }
-        
+
         #metric-modal .metric-chart .scale_button rect {
             fill: #eaeaea;
         }
@@ -127,7 +127,7 @@
             fill: #417DD6;
             transition: all 0.1s cubic-bezier(.25,.8,.25,1);
         }
-        
+
         #metric-modal .metric-chart text#displayDates  {
             font-weight: bold;
         }
@@ -158,7 +158,8 @@
 </head>
 <body>
 
-    <div class="tab">
+    <div class="tab" style="background-color: #990000">
+      <img src="{{ url_for ('static', filename='sbuicon.png') }}" width="40" height="40" style="float: left">
       <button class="tablinks" onclick="openTabClick(event, 'dashboard_container', 1)" id="btn_dashboard">Dashboard</button>
       <button class="tablinks" onclick="openTabClick(event, 'parallel_container', 5)" id="btn_parallel">Parallel Coordinates</button>
     </div>
@@ -166,16 +167,44 @@
     <div class="tabcontent" id="dashboard_container">
 
         <div class="row">
-
             <div class="col-lg-6">
                 <div class="row">
-
-                    <!-- Time Chart -->
-                    <div class="col-lg-12">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                               Distribution of cases
+                    <!-- Confirmed Cases -->
+                    <div class="col-lg-4">
+                        <div class="card card-body" style="border: 3px solid rgba(221, 224, 19, 0.16)">
+                          <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Confirmed </h6>
+                            <div class="chart-stage">
+                                <div id="confirmed-cases"></div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Deaths -->
+                    <div class="col-lg-4">
+                        <div class="card card-body" style="border: 3px solid rgba(224, 14, 14, 0.16)">
+                          <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Total<span class="d-none d-md-inline"> Deaths</span></h6>
+
+                            <div class="chart-stage">
+                                <div id="deaths"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recovered Cases -->
+                    <div class="col-lg-4">
+                        <div class="card card-body">
+                          <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Recovered </h6>
+
+                            <div class="chart-stage">
+                                <div id="recovered-cases"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- US Map -->
+                    <div class="col-lg-12">
+                        <div class="card card-body">
+                          <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Distribution of Cases </h6>
 
                             <div class="chart-stage">
                                 <svg id="uschart2" width="650" height="500"> </svg>
@@ -183,47 +212,18 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Time Chart -->
-
-                    <!-- Victim race Pie -->
-                    <div class="col-lg-6">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Total deaths
-                            </div>
-
-                            <div class="chart-stage">
-                                <div id="deaths"></div>
-                                <div id="victim-race-pie-chart" style="transform: translate(15px, 0px)"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Victim race Pie -->
-
-                    <!-- Weapon Row -->
-                    <div class="col-lg-6">
-                        <div class="chart-wrapper">
-                            <div class="chart-title">
-                                Recovered Cases
-                            </div>
-
-                            <div class="chart-stage">
-                                <div id="recovered-cases"></div>
-                                <div id="weapon-used-row-chart"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Weapon Row -->
 
                 </div>
             </div>
 
             <!-- Map -->
             <div class="col-lg-6">
-                <div class="chart-wrapper" style="height:450px;">
-                    <div class="chart-title">
+              <div class="card card-body">
+                <!-- <div class="chart-wrapper" style="height:450px;"> -->
+                  <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Distribution </h6>
+                    <!-- <div class="chart-title">
                         Distribution
-                    </div>
+                    </div> -->
 
                     <!-- <div class="chart-stage"> -->
                         <div id="metric-modal" ></div>
@@ -235,12 +235,14 @@
 
             <!-- Metric 1 -->
             <div class="col-lg-6">
-                <div class="chart-wrapper">
-                    <div class="chart-title">
+                <!-- <div class="chart-wrapper"> -->
+                <div class="card card-body">
+                  <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Top 10 Countries</h6>
+                    <!-- <div class="chart-title">
                         Total Deaths
-                    </div>
+                    </div> -->
 
-                    <div class="chart-stage" style="height:200px">
+                    <div class="chart-stage" style="height:193px">
                         <div id="pie-chart"></div>
                         <!-- <div id="deaths"></div> -->
                     </div>
@@ -265,7 +267,7 @@
         </div>
 
     </div>
-    
+
     <!-- <div class="row" width="900">
         <div class="col-lg-6">
             <svg id="uschart3" width="650" height="500"> </svg>
@@ -310,7 +312,7 @@
     <div class="tabcontent" id="bubble_container">
         <svg class="bubble_svg" id="stack" width="940" height="460"></svg>
     </div>
-    
+
     <!-- <script src="https://d3js.org/topojson.v2.min.js"></script> -->
     <script src="http://d3js.org/colorbrewer.v1.min.js"></script>
     <script src="{{ url_for('static', filename='lib/js/d3.slider.js') }}"></script>
@@ -330,6 +332,6 @@
     <!-- <script src="{{ url_for('static', filename='lib/js/d3.tip.v0.6.3.js') }}"></script> -->
     <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
     <!-- <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script> -->
-    
+
 </body>
 </html>

@@ -1,3 +1,50 @@
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 3px solid rgba(15, 171, 34, 0.16);
+    border-radius: 0.25rem;
+}
+
+.card-body {
+    flex: 1 1 auto;
+    padding: 1.25rem;
+}
+
+.tx-11 {
+    font-size: 11px;
+}
+
+.tx-uppercase {
+    text-transform: uppercase;
+}
+.tx-spacing-1 {
+    letter-spacing: 0.5px;
+}
+.mg-b-8 {
+    margin-bottom: 8px;
+}
+.tx-semibold {
+    font-weight: 600;
+}
+.tx-color-02 {
+    color: #1b2e4b;
+}
+.d-md-inline {
+    display: inline !important;
+}
+
+
+.h6 {
+    font-size: 0.875rem;
+}
+
+
+
 .chart-wrapper {
     border: 2px solid #3d4a57;
     min-height:131px;
@@ -53,7 +100,7 @@ div.tab button:hover {
 }
 
 div.tab button.active {
-    background-color: steelblue;
+    background-color: #990000;
 }
 
 .tabcontent {
@@ -115,7 +162,7 @@ div.tab button.active {
 }
 
 .foreground path.inactive {
-  stroke: #ccc;
+  /* stroke: #ccc; */
   stroke-opacity: .5;
   stroke-width: 1px;
 }
