@@ -383,7 +383,7 @@ function drawRadarWrapper(state)
         var newdata = [data['male'], data['female']]
         drawRadar(newdata);
       });
-   
+
 }
 function drawRadar(d){
   var w = 400,
@@ -1791,8 +1791,8 @@ function renderLengend(teamList) {
 
 
 function populate_parallel() {
-    var margin = {top: 30, right: 40, bottom: 20, left: 200};
-    var width = 1260 - margin.left - margin.right;
+    var margin = {top: 30, right: 40, bottom: 20, left: 130};
+    var width = 1050 - margin.left - margin.right;
     var height = 500 - margin.top - margin.bottom;
     $.ajax({
      type : "POST",
@@ -1978,7 +1978,7 @@ function drawStackedArea() {
    return colors[ n % colors.length];}
 
   var margin = {top: 61, right: 140, bottom: 101, left: 50},
-      width = 960 - margin.left - margin.right,
+      width = 800 - margin.left - margin.right,
       height = 500 - margin.top - margin.bottom;
 
 
@@ -2041,15 +2041,6 @@ function drawStackedArea() {
           .style("font", "12px avenir")
           .style("fill", "#000000")
           .text("This is a stacked area chart of the  time series data on Confirmed Corona Cases across different states in India.");
-
-          svg.append("text")
-          .attr("x", 0)
-          .attr("y", 402)
-          .attr("dy", "3em")
-          .style("font", "12px avenir")
-          .style("fill", "#000000")
-          .text("By Group 46")
-          .style("font-weight", "bold");
 
          color.domain(d3.keys(data[0]).filter(function(key) {return key !== "day" && key !== "total"; }));
 
