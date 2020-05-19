@@ -68,11 +68,34 @@ def us_states_json():
     data = json.dumps(data)#, default=json_util.default)
     return data
 
+# @app.route("/get_time_series_data/<state>/<column>")
+# def time_series_data(state, column):
+#     isaggr = request.args.get('aggr', False)
+#     startDate = request.args.get('startDate', '01/01/2020') or '01/01/2020'
+#     endDate = request.args.get('endDate', '5/20/2020') or '5/20/2020'
+#     startDate = datetime.datetime.strptime(startDate, '%m/%d/%Y')
+#     endDate = datetime.datetime.strptime(endDate, '%m/%d/%Y')
+#
+#     print(startDate, endDate)
+#     df_aggr = pd.read_csv('static/data/covid19_usa_complete.csv')
+#     if state!='' and state!='all':
+#         df_aggr = df_aggr[df_aggr.name == state]
+#     df_aggr = df_aggr.sort_values('Last Update')
+#     df_aggr['date'] = df_aggr['Last Update'].map(lambda x: datetime.datetime.strptime(x[:10], '%Y-%m-%d'))
+#     datecheck = (df_aggr['date'] >= startDate) & (df_aggr['date'] <= endDate)
+#     df_aggr = df_aggr[datecheck]
+#     if not isaggr:
+#         if state == 'all':
+#             df_aggr =  df_aggr.groupby(['date']).sum()
+#             return {"values":df_aggr[column].tolist(), "dates": df_aggr.index.map(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d') ).tolist()}
+#         return {"values": df_aggr[column].tolist(), "dates": df_aggr['Last Update'].map(lambda x: x[:10]).tolist()}
+#     return str(df_aggr[column].sum())
+
 @app.route("/get_time_series_data/<state>/<column>")
 def time_series_data(state, column):
     isaggr = request.args.get('aggr', False)
-    startDate = request.args.get('startDate', '01/01/2020') or '01/01/2020'
-    endDate = request.args.get('endDate', '5/20/2020') or '5/20/2020'
+    startDate = request.args.get('startDate', '3/2/2020') or '3/2/2020'
+    endDate = request.args.get('endDate', '5/14/2020') or '5/14/2020'
     startDate = datetime.datetime.strptime(startDate, '%m/%d/%Y')
     endDate = datetime.datetime.strptime(endDate, '%m/%d/%Y')
 
@@ -80,16 +103,25 @@ def time_series_data(state, column):
     df_aggr = pd.read_csv('static/data/covid19_usa_complete.csv')
     if state!='' and state!='all':
         df_aggr = df_aggr[df_aggr.name == state]
-    df_aggr = df_aggr.sort_values('Last Update')
+    # df_aggr = df_aggr.sort_values('Last Update')
     df_aggr['date'] = df_aggr['Last Update'].map(lambda x: datetime.datetime.strptime(x[:10], '%Y-%m-%d'))
-    datecheck = (df_aggr['date'] >= startDate) & (df_aggr['date'] <= endDate)
-    df_aggr = df_aggr[datecheck]
-    if not isaggr:
-        if state == 'all':
-            df_aggr =  df_aggr.groupby(['date']).sum()
-            return {"values":df_aggr[column].tolist(), "dates": df_aggr.index.map(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d') ).tolist()}
-        return {"values": df_aggr[column].tolist(), "dates": df_aggr['Last Update'].map(lambda x: x[:10]).tolist()}
-    return str(df_aggr[column].sum())
+    # if aggregated data is requested
+    if isaggr:
+        if state != 'all':
+            return str(df_aggr[df_aggr.date == endDate][column].max() - df_aggr[df_aggr.date == startDate][column].max())
+        return str(df_aggr[df_aggr.date == endDate].groupby('name')[column].max().sum() - df_aggr[df_aggr.date == startDate].groupby('name')[column].max().sum())
+
+    daterange = (df_aggr['date'] >= startDate) & (df_aggr['date'] <= endDate)
+    df_aggr = df_aggr[daterange]
+    df_aggr = df_aggr.sort_values('date')
+    if state == 'all':
+        df_aggr = df_aggr.groupby(['date', 'name'])[column].max().reset_index()
+        df_day = df_aggr.groupby('date')[column].sum().diff()[1:]
+        return {"values": [abs(x) for x in df_day.tolist()],
+                "dates": df_day.index.map(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d')).tolist()}
+
+    df_day = df_aggr.groupby('date')[column].max().diff()[1:]
+    return {"values": df_day.tolist(), "dates": df_day.index.map(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d')).tolist()}
 
 
 @app.route("/get_map_data")
