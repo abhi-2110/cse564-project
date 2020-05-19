@@ -373,9 +373,307 @@ document.getElementById("dashboard_container").style.display = "block";
 populate_map();
 draw_time_series('all');
 draw_pie_chart_wrapper('all');
-// var num_recovered=1, num_deaths=1;
-// var num_recovered, num_deaths;
 update_count('all');
+drawRadar();
+function drawRadar(){
+  var w = 400,
+	h = 400;
+
+var colorscale = d3.scale.ordinal().range(["#CC333F","#00A0B0"]);
+// category10();
+
+//Legend titles
+var LegendOptions = ['Male','Female'];
+
+//Data
+var d = [
+		  [
+			{axis:"Age 1-14 years",value:0.59},
+			{axis:"Age 15-24 years",value:0.56},
+			{axis:"Age 25-34 years",value:0.42},
+			{axis:"Age 35-44 years",value:0.34},
+			{axis:"Age 45-54 years",value:0.48},
+			{axis:"Age 55-64 years",value:0.14},
+			{axis:"Age 65-74 years",value:0.11},
+			{axis:"Age 75-84 years",value:0.05},
+			{axis:"Age Above 85 years",value:0.12},
+		  ],[
+        {axis:"Age 1-14 years",value:0.39},
+  			{axis:"Age 15-24 years",value:0.56},
+  			{axis:"Age 25-34 years",value:0.12},
+  			{axis:"Age 35-44 years",value:0.34},
+  			{axis:"Age 45-54 years",value:0.38},
+  			{axis:"Age 55-64 years",value:0.14},
+  			{axis:"Age 65-74 years",value:0.81},
+  			{axis:"Age 75-84 years",value:0.05},
+  			{axis:"Age Above 85 years",value:0.12},
+		  ]
+		];
+
+//Options for the Radar chart, other than default
+var mycfg = {
+  w: w,
+  h: h,
+  maxValue: 0.6,
+  levels: 6,
+  ExtraWidthX: 300
+}
+var RadarChart = {
+  draw: function(id, d, options){
+  var cfg = {
+	 radius: 5,
+	 w: 100,
+	 h: 100,
+	 factor: 1,
+	 factorLegend: .85,
+	 levels: 3,
+	 maxValue: 0,
+	 radians: 2 * Math.PI,
+	 opacityArea: 0.5,
+	 ToRight: 5,
+	 TranslateX: 80,
+	 TranslateY: 70,
+	 ExtraWidthX: 100,
+	 ExtraWidthY: 100,
+	 color: d3.scale.ordinal().range(["#CC333F","#00A0B0"]),//d3.scale.category10()
+	};
+
+	if('undefined' !== typeof options){
+	  for(var i in options){
+		if('undefined' !== typeof options[i]){
+		  cfg[i] = options[i];
+		}
+	  }
+	}
+	cfg.maxValue = Math.max(cfg.maxValue, d3.max(d, function(i){return d3.max(i.map(function(o){return o.value;}))}));
+	var allAxis = (d[0].map(function(i, j){return i.axis}));
+	var total = allAxis.length;
+	var radius = cfg.factor*Math.min(cfg.w/2, cfg.h/2);
+	var Format = d3.format('%');
+	d3.select(id).select("svg").remove();
+
+	var g = d3.select(id)
+			.append("svg")
+			.attr("width", cfg.w+cfg.ExtraWidthX)
+			.attr("height", cfg.h+cfg.ExtraWidthY)
+			.append("g")
+			.attr("transform", "translate(" + cfg.TranslateX + "," + cfg.TranslateY + ")");
+			;
+
+	var tooltip;
+
+	//Circular segments
+	for(var j=0; j<cfg.levels-1; j++){
+	  var levelFactor = cfg.factor*radius*((j+1)/cfg.levels);
+	  g.selectAll(".levels")
+	   .data(allAxis)
+	   .enter()
+	   .append("svg:line")
+	   .attr("x1", function(d, i){return levelFactor*(1-cfg.factor*Math.sin(i*cfg.radians/total));})
+	   .attr("y1", function(d, i){return levelFactor*(1-cfg.factor*Math.cos(i*cfg.radians/total));})
+	   .attr("x2", function(d, i){return levelFactor*(1-cfg.factor*Math.sin((i+1)*cfg.radians/total));})
+	   .attr("y2", function(d, i){return levelFactor*(1-cfg.factor*Math.cos((i+1)*cfg.radians/total));})
+	   .attr("class", "line")
+	   .style("stroke", "grey")
+	   .style("stroke-opacity", "0.75")
+	   .style("stroke-width", "0.3px")
+	   .attr("transform", "translate(" + (cfg.w/2-levelFactor) + ", " + (cfg.h/2-levelFactor) + ")");
+	}
+
+	//Text indicating at what % each level is
+	for(var j=0; j<cfg.levels; j++){
+	  var levelFactor = cfg.factor*radius*((j+1)/cfg.levels);
+	  g.selectAll(".levels")
+	   .data([1]) //dummy data
+	   .enter()
+	   .append("svg:text")
+	   .attr("x", function(d){return 70 + levelFactor*(1-cfg.factor*Math.sin(0));})
+	   .attr("y", function(d){return levelFactor*(1-cfg.factor*Math.cos(0));})
+	   .attr("class", "legend")
+	   .style("font-family", "sans-serif")
+	   .style("font-size", "10px")
+	   .attr("transform", "translate(" + (cfg.w/2-levelFactor + cfg.ToRight) + ", " + (cfg.h/2-levelFactor) + ")")
+	   .attr("fill", "#737373")
+	   .text(Format((j+1)*cfg.maxValue/cfg.levels));
+	}
+
+	series = 0;
+
+	var axis = g.selectAll(".axis")
+			.data(allAxis)
+			.enter()
+			.append("g")
+			.attr("class", "axis");
+
+	axis.append("line")
+		.attr("x1", cfg.w/2)
+		.attr("y1", cfg.h/2)
+		.attr("x2", function(d, i){return cfg.w/2*(1-cfg.factor*Math.sin(i*cfg.radians/total));})
+		.attr("y2", function(d, i){return cfg.h/2*(1-cfg.factor*Math.cos(i*cfg.radians/total));})
+		.attr("class", "line")
+		.style("stroke", "grey")
+		.style("stroke-width", "1px");
+
+	axis.append("text")
+		.attr("class", "legend")
+		.text(function(d){return d})
+		.style("font-family", "sans-serif")
+		.style("font-size", "11px")
+		.attr("text-anchor", "middle")
+		.attr("dy", "1.5em")
+		.attr("transform", function(d, i){return "translate(0, -10)"})
+		.attr("x", function(d, i){return cfg.w/2*(1-cfg.factorLegend*Math.sin(i*cfg.radians/total))-60*Math.sin(i*cfg.radians/total);})
+		.attr("y", function(d, i){return -50 + cfg.h/2*(1-Math.cos(i*cfg.radians/total))-20*Math.cos(i*cfg.radians/total);});
+
+
+	d.forEach(function(y, x){
+	  dataValues = [];
+	  g.selectAll(".nodes")
+		.data(y, function(j, i){
+		  dataValues.push([
+			cfg.w/2*(1-(parseFloat(Math.max(j.value, 0))/cfg.maxValue)*cfg.factor*Math.sin(i*cfg.radians/total)),
+			cfg.h/2*(1-(parseFloat(Math.max(j.value, 0))/cfg.maxValue)*cfg.factor*Math.cos(i*cfg.radians/total))
+		  ]);
+		});
+	  dataValues.push(dataValues[0]);
+	  g.selectAll(".area")
+					 .data([dataValues])
+					 .enter()
+					 .append("polygon")
+					 .attr("class", "radar-chart-serie"+series)
+					 .style("stroke-width", "2px")
+					 .style("stroke", cfg.color(series))
+					 .attr("points",function(d) {
+						 var str="";
+						 for(var pti=0;pti<d.length;pti++){
+							 str=str+d[pti][0]+","+d[pti][1]+" ";
+						 }
+						 return str;
+					  })
+					 .style("fill", function(j, i){return cfg.color(series)})
+					 .style("fill-opacity", cfg.opacityArea)
+					 .on('mouseover', function (d){
+										z = "polygon."+d3.select(this).attr("class");
+										g.selectAll("polygon")
+										 .transition(200)
+										 .style("fill-opacity", 0.1);
+										g.selectAll(z)
+										 .transition(200)
+										 .style("fill-opacity", .7);
+									  })
+					 .on('mouseout', function(){
+										g.selectAll("polygon")
+										 .transition(200)
+										 .style("fill-opacity", cfg.opacityArea);
+					 });
+	  series++;
+	});
+	series=0;
+
+
+	d.forEach(function(y, x){
+	  g.selectAll(".nodes")
+		.data(y).enter()
+		.append("svg:circle")
+		.attr("class", "radar-chart-serie"+series)
+		.attr('r', cfg.radius)
+		.attr("alt", function(j){return Math.max(j.value, 0)})
+		.attr("cx", function(j, i){
+		  dataValues.push([
+			cfg.w/2*(1-(parseFloat(Math.max(j.value, 0))/cfg.maxValue)*cfg.factor*Math.sin(i*cfg.radians/total)),
+			cfg.h/2*(1-(parseFloat(Math.max(j.value, 0))/cfg.maxValue)*cfg.factor*Math.cos(i*cfg.radians/total))
+		]);
+		return cfg.w/2*(1-(Math.max(j.value, 0)/cfg.maxValue)*cfg.factor*Math.sin(i*cfg.radians/total));
+		})
+		.attr("cy", function(j, i){
+		  return cfg.h/2*(1-(Math.max(j.value, 0)/cfg.maxValue)*cfg.factor*Math.cos(i*cfg.radians/total));
+		})
+		.attr("data-id", function(j){return j.axis})
+		.style("fill", cfg.color(series)).style("fill-opacity", .9)
+		.on('mouseover', function (d){
+					newX =  parseFloat(d3.select(this).attr('cx')) - 10;
+					newY =  parseFloat(d3.select(this).attr('cy')) - 5;
+
+					tooltip
+						.attr('x', newX)
+						.attr('y', newY)
+						.text(Format(d.value))
+						.transition(200)
+						.style('opacity', 1);
+
+					z = "polygon."+d3.select(this).attr("class");
+					g.selectAll("polygon")
+						.transition(200)
+						.style("fill-opacity", 0.1);
+					g.selectAll(z)
+						.transition(200)
+						.style("fill-opacity", .7);
+				  })
+		.on('mouseout', function(){
+					tooltip
+						.transition(200)
+						.style('opacity', 0);
+					g.selectAll("polygon")
+						.transition(200)
+						.style("fill-opacity", cfg.opacityArea);
+				  })
+		.append("svg:title")
+		.text(function(j){return Math.max(j.value, 0)});
+
+	  series++;
+	});
+	//Tooltip
+	tooltip = g.append('text')
+			   .style('opacity', 0)
+			   .style('font-family', 'sans-serif')
+			   .style('font-size', '13px');
+  }
+};
+
+//Call function to draw the Radar chart
+//Will expect that data is in %'s
+RadarChart.draw("#rader", d, mycfg);
+
+////////////////////////////////////////////
+/////////// Initiate legend ////////////////
+////////////////////////////////////////////
+
+var svg = d3.select('#raderp')
+	.selectAll('svg')
+	.append('svg')
+	.attr("width", w+300)
+	.attr("height", h)
+
+//Initiate Legend
+var legend = svg.append("g")
+	.attr("class", "legend")
+	.attr("height", 100)
+	.attr("width", 200)
+	.attr('transform', 'translate(90,20)')
+	;
+	//Create colour squares
+	legend.selectAll('rect')
+	  .data(LegendOptions)
+	  .enter()
+	  .append("rect")
+	  .attr("x", w + 180)
+	  .attr("y", function(d, i){ return i * 20;})
+	  .attr("width", 10)
+	  .attr("height", 10)
+	  .style("fill", function(d, i){ return colorscale(i);})
+	  ;
+	//Create text next to squares
+	legend.selectAll('text')
+	  .data(LegendOptions)
+	  .enter()
+	  .append("text")
+	  .attr("x", w + 193)
+	  .attr("y", function(d, i){ return i * 20 + 9;})
+	  .attr("font-size", "11px")
+	  .attr("fill", "#737373")
+	  .text(function(d) { return d; });
+}
+
 function dashboard_click(state)
 {
     // var recovered, deaths;
@@ -386,9 +684,6 @@ function dashboard_click(state)
 }
 function draw_pie_chart_wrapper(state, startDate='', endDate='')
 {
-    // var num_recovered=1, num_deaths=1;
-    // num_recovered=1;
-    // num_deaths=1;
     $.when(
         $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True&startDate='+startDate+'&endDate='+endDate , function(data) {
              num_recovered = data;
@@ -623,12 +918,10 @@ function change(data) {
 function update_count(state, startDate='', endDate='')
 {
     $.getJSON('/get_time_series_data/' + state + '/Recovered?aggr=True&startDate='+startDate+'&endDate='+endDate , function(data) {
-        console.log('update_count', '/get_time_series_data/' + state + '/Recovered?aggr=True&startDate='+startDate+'&endDate='+endDate );
         window.num_recovered = data;
         updateRecovery(data);
     });
     $.getJSON('/get_time_series_data/' + state + '/Confirmed?aggr=True&startDate='+startDate+'&endDate='+endDate , function(data) {
-        console.log('update_count', '/get_time_series_data/' + state + '/Confirmed?aggr=True&startDate='+startDate+'&endDate='+endDate );
         window.num_confirmed = data;
         updateConfirmed(data);
     });
@@ -637,13 +930,13 @@ function update_count(state, startDate='', endDate='')
         updateDeaths(data);
     });
     function updateConfirmed(data){
-        $('#confirmed-cases').html(('<h2>' + data + '</h2>'));
+        $('#confirmed-cases').html(('<h3>' + data + '</h3>'));
     }
     function updateRecovery(data){
-        $('#recovered-cases').html(('<h2>' + data + '</h2>'));
+        $('#recovered-cases').html(('<h3>' + data + '</h3>'));
     }
     function updateDeaths(data){
-        $('#deaths').html(('<h2>' + data + '</h2>'));
+        $('#deaths').html(('<h3>' + data + '</h3>'));
     }
     // console.log('update_count ->', window.num_recovered,  window.num_deaths);
 }
@@ -651,7 +944,6 @@ function draw_time_series(state)
 {
 
     $.getJSON('/get_time_series_data/' + state + '/Confirmed', function(data) {
-                    // console.log('Sample data read', data);
                     var metricCount = data.values;
                     var metricMonths = data.dates;
                     var metricName   = "";
@@ -659,7 +951,57 @@ function draw_time_series(state)
                     var optheight       = 370;
 
                     draw(metricCount, metricMonths, metricName, optwidth, optheight)
+                    sparkwrap();
+
                 });
+                function sparkwrap(startDate='',endDate=''){
+                  $.getJSON('/get_time_series_data/' + state + '/Deaths?startDate=' +startDate+'&endDate='+endDate, function(data) {
+                    sparkline('#deaths-spark',data.values);
+                  });
+
+                  $.getJSON('/get_time_series_data/' + state + '/Recovered?startDate=' +startDate+'&endDate='+endDate, function(data) {
+                    sparkline('#recovered-spark',data.values);
+                  });
+
+                  $.getJSON('/get_time_series_data/' + state + '/Confirmed?startDate=' +startDate+'&endDate='+endDate, function(data) {
+                    sparkline('#confirmed-spark',data.values);
+                  });
+                }
+
+                function sparkline(elemId, olddata) {
+                    var width = 100;
+                    var height = 56;
+                    var x = d3.scale.linear().range([0, width - 2]);
+                    var y = d3.scale.linear().range([height - 4, 0]);
+                    data = []
+                    for(i=0;i<olddata.length;i++){
+                      data.push({'id': i, 'metric': olddata[i]})
+                    }
+                    d3.select(elemId).selectAll('*').remove();
+                    var line = d3.svg.line()
+                                     .interpolate("basis")
+                                     .x(function(d) { return x(d.id); })
+                                     .y(function(d) { return y(d.metric); });
+
+                    x.domain(d3.extent(data, function(d) { return d.id; }));
+                    y.domain(d3.extent(data, function(d) { return d.metric; }));
+
+                    var svg = d3.select(elemId)
+                                .append('svg')
+                                .attr('width', width)
+                                .attr('height', height)
+                                .append('g')
+                                .attr('transform', 'translate(0, 2)');
+                    svg.append('path')
+                       .datum(data)
+                       .attr('class', 'sparkline')
+                       .attr('d', line);
+                    svg.append('circle')
+                       .attr('class', 'sparkcircle')
+                       .attr('cx', x(data[data.length-1].id))
+                       .attr('cy', y(data[data.length-1].metric))
+                       .attr('r', 1.5);
+                }
                 function draw(metricCount, metricMonths, metricName, optwidth, optheight)
                 {
                     // console.log('Drawing time series');
@@ -1066,6 +1408,7 @@ function draw_time_series(state)
                     // console.log('brush End', startdate, enddate, state);
                     populate_map(startdate, enddate);
                     update_count(state, startdate, enddate);
+                    sparkwrap(startdate,enddate)
                 };
 
                 function updateDisplayDates() {

@@ -154,6 +154,15 @@
         pointer-events: none;
         box-shadow: 0 0 5px #999999;
         }
+         .sparkline {
+             fill: none;
+             stroke: #000;
+             stroke-width: 0.5px;
+         }
+         .sparkcircle {
+             fill: #f00;
+             stroke: none;
+         }
         </style>
 </head>
 <body>
@@ -173,8 +182,9 @@
                     <div class="col-lg-4">
                         <div class="card card-body" style="border: 3px solid rgba(221, 224, 19, 0.16)">
                           <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Confirmed </h6>
-                            <div class="chart-stage">
-                                <div id="confirmed-cases"></div>
+                            <div class="row">
+                                <div class="col-lg-6" id="confirmed-cases"></div>
+                                <div class="col-lg-6" id="confirmed-spark"></div>
                             </div>
                         </div>
                     </div>
@@ -184,9 +194,10 @@
                         <div class="card card-body" style="border: 3px solid rgba(224, 14, 14, 0.16)">
                           <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Total<span class="d-none d-md-inline"> Deaths</span></h6>
 
-                            <div class="chart-stage">
-                                <div id="deaths"></div>
-                            </div>
+                          <div class="row">
+                              <div class="col-lg-6" id="deaths"></div>
+                              <div class="col-lg-6" id="deaths-spark"></div>
+                          </div>
                         </div>
                     </div>
 
@@ -195,9 +206,10 @@
                         <div class="card card-body">
                           <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Recovered </h6>
 
-                            <div class="chart-stage">
-                                <div id="recovered-cases"></div>
-                            </div>
+                          <div class="row">
+                              <div class="col-lg-6" id="recovered-cases"></div>
+                              <div class="col-lg-6" id="recovered-spark"></div>
+                          </div>
                         </div>
                     </div>
 
@@ -207,11 +219,25 @@
                           <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Distribution of Cases </h6>
 
                             <div class="chart-stage">
-                                <svg id="uschart2" width="650" height="500"> </svg>
+                                <svg id="uschart2" width="650" height="400"> </svg>
                                 <!-- <div id="time-chart"></div> -->
                             </div>
                         </div>
                     </div>
+
+                    <div class="col-lg-12">
+                    <div class="card card-body">
+                      <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Top 10 Countries</h6>
+                        <!-- <div class="chart-title">
+                            Total Deaths
+                        </div> -->
+
+                        <div class="chart-stage" style="height:193px">
+                            <div id="pie-chart"></div>
+                            <!-- <div id="deaths"></div> -->
+                        </div>
+                    </div>
+                  </div>
 
                 </div>
             </div>
@@ -226,7 +252,7 @@
                     </div> -->
 
                     <!-- <div class="chart-stage"> -->
-                        <div id="metric-modal" ></div>
+                        <div id="metric-modal" style="height: 400px"></div>
                         <!-- <div id="us-chart"></div> -->
                     <!-- </div> -->
                 </div>
@@ -236,16 +262,8 @@
             <!-- Metric 1 -->
             <div class="col-lg-6">
                 <!-- <div class="chart-wrapper"> -->
-                <div class="card card-body">
-                  <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Top 10 Countries</h6>
-                    <!-- <div class="chart-title">
-                        Total Deaths
-                    </div> -->
-
-                    <div class="chart-stage" style="height:193px">
-                        <div id="pie-chart"></div>
-                        <!-- <div id="deaths"></div> -->
-                    </div>
+                <div class="card card-body" id="raderp" style="height: 550px">
+                  <div id="rader"></div>
                 </div>
             </div>
             <!-- Metric 1 -->
