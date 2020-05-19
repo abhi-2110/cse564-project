@@ -374,8 +374,18 @@ populate_map();
 draw_time_series('all');
 draw_pie_chart_wrapper('all');
 update_count('all');
-drawRadar();
-function drawRadar(){
+drawRadarWrapper('all');
+function drawRadarWrapper(state)
+{
+    $.getJSON('/get_radar_data/' + state + '?fraction=True', function(data) {
+        console.log(data);
+        window.d = data;
+        var newdata = [data['male'], data['female']]
+        drawRadar(newdata);
+      });
+   
+}
+function drawRadar(d){
   var w = 400,
 	h = 400;
 
@@ -386,29 +396,29 @@ var colorscale = d3.scale.ordinal().range(["#CC333F","#00A0B0"]);
 var LegendOptions = ['Male','Female'];
 
 //Data
-var d = [
-		  [
-			{axis:"Age 1-14 years",value:0.59},
-			{axis:"Age 15-24 years",value:0.56},
-			{axis:"Age 25-34 years",value:0.42},
-			{axis:"Age 35-44 years",value:0.34},
-			{axis:"Age 45-54 years",value:0.48},
-			{axis:"Age 55-64 years",value:0.14},
-			{axis:"Age 65-74 years",value:0.11},
-			{axis:"Age 75-84 years",value:0.05},
-			{axis:"Age Above 85 years",value:0.12},
-		  ],[
-        {axis:"Age 1-14 years",value:0.39},
-  			{axis:"Age 15-24 years",value:0.56},
-  			{axis:"Age 25-34 years",value:0.12},
-  			{axis:"Age 35-44 years",value:0.34},
-  			{axis:"Age 45-54 years",value:0.38},
-  			{axis:"Age 55-64 years",value:0.14},
-  			{axis:"Age 65-74 years",value:0.81},
-  			{axis:"Age 75-84 years",value:0.05},
-  			{axis:"Age Above 85 years",value:0.12},
-		  ]
-		];
+// var d = [
+// 		  [
+// 			{axis:"Age 1-14 years",value:0.59},
+// 			{axis:"Age 15-24 years",value:0.56},
+// 			{axis:"Age 25-34 years",value:0.42},
+// 			{axis:"Age 35-44 years",value:0.34},
+// 			{axis:"Age 45-54 years",value:0.48},
+// 			{axis:"Age 55-64 years",value:0.14},
+// 			{axis:"Age 65-74 years",value:0.11},
+// 			{axis:"Age 75-84 years",value:0.05},
+// 			{axis:"Age Above 85 years",value:0.12},
+// 		  ],[
+//         {axis:"Age 1-14 years",value:0.39},
+//   			{axis:"Age 15-24 years",value:0.56},
+//   			{axis:"Age 25-34 years",value:0.12},
+//   			{axis:"Age 35-44 years",value:0.34},
+//   			{axis:"Age 45-54 years",value:0.38},
+//   			{axis:"Age 55-64 years",value:0.14},
+//   			{axis:"Age 65-74 years",value:0.81},
+//   			{axis:"Age 75-84 years",value:0.05},
+//   			{axis:"Age Above 85 years",value:0.12},
+// 		  ]
+// 		];
 
 //Options for the Radar chart, other than default
 var mycfg = {
@@ -680,6 +690,7 @@ function dashboard_click(state)
     draw_time_series(state);
     update_count(state);
     // console.log('click ->', window.num_recovered,  window.num_deaths);
+    drawRadarWrapper(state);
     draw_pie_chart_wrapper(state);
 }
 function draw_pie_chart_wrapper(state, startDate='', endDate='')

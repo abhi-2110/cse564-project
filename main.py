@@ -15,6 +15,7 @@ import pandas as pd
 import glob
 from flask import request
 import datetime
+from sodapy import Socrata
 
 app = Flask(__name__)
 
@@ -143,6 +144,32 @@ def get_map_data():
     df_aggr = df_aggr.groupby('states').agg({'Confirmed': 'sum', 'Deaths': 'sum', 'Recovered': 'sum', 'Region': 'any'})
     # print(df_aggr)
     return df_aggr[['Confirmed', 'Deaths', 'Recovered']].to_csv(header=True)
+
+@app.route("/get_radar_data/<state>")
+def get_radar_data(state):
+    global results_df
+    fraction = request.args.get('fraction', 'True') or 'True'
+    fraction = bool(fraction)
+    if state == 'all':
+        state = 'United States'
+    # if state != 'all':
+    df_male = results_df[(results_df.sex == 'Male') & (results_df.state == state)][['age_group', 'covid_19_deaths']].fillna(0)
+    df_male = df_male.rename(columns = {'age_group' : 'axis', 'covid_19_deaths': 'value'})
+    df_male['value'] = df_male['value'].astype('int')
+
+    df_female = results_df[(results_df.sex == 'Female') & (results_df.state == state)][['age_group', 'covid_19_deaths']].fillna(0)
+    df_female = df_female.rename(columns={'age_group': 'axis', 'covid_19_deaths': 'value'})
+    df_female['value'] = df_female['value'].astype('int')
+    if not fraction:
+        return { 'male' : df_male.to_dict('records'), 'female' : df_female.to_dict('records')}
+    df_male['value'] = df_male['value']/ df_male['value'].sum()
+    df_female['value'] = df_female['value'] / df_female['value'].sum()
+    return {'male': df_male.to_dict('records'), 'female': df_female.to_dict('records')}
+
+
+client = Socrata("data.cdc.gov", None)
+results = client.get("9bhg-hcku", limit=2000)
+results_df = pd.DataFrame.from_records(results)
 
 if __name__ == "__main__":
     app.run('localhost', '5050')
