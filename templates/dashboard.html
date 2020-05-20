@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Covid-19 Dashboard</title>
-    <link rel = "icon" href ="{{ url_for ('static', filename='sbuicon.png') }}" type = "image/x-icon">
+    <link rel = "icon" href ="{{ url_for ('static', filename='img/sbuicon.png') }}" type = "image/x-icon">
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='lib/css/bootstrap.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='lib/css/dc.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='lib/css/keen-dashboards.css') }}">
@@ -168,7 +168,7 @@
 <body>
 
     <div class="tab" style="background-color: #990000">
-      <img src="{{ url_for ('static', filename='sbuicon.png') }}" width="40" height="40" style="float: left">
+      <img src="{{ url_for ('static', filename='img/sbuicon.png') }}" width="40" height="40" style="float: left">
       <button class="tablinks" onclick="openTabClick(event, 'dashboard_container', 1)" id="btn_dashboard">Dashboard</button>
       <button class="tablinks" onclick="openTabClick(event, 'parallel_container', 5)" id="btn_parallel">Covid-19 India Analysis</button>
     </div>
