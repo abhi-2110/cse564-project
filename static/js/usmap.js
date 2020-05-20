@@ -80,7 +80,6 @@ function populate_map() {
             .on('mouseout', tip.hide)
             .on('click', function(d){ console.log(d, d.properties.name); dashboard_click(d.properties.name);})
             .attr('fill', function(d,i) {
-                // console.log(d.properties.name);
                 return getColor(d);
             })
             .append("title");

@@ -11,7 +11,6 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='lib/css/radar-chart.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='css/style.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for ('static', filename='lib/css/time_series.css') }}">
-    <title>CSE 564 Final Project</title>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore.js"></script>
     <style>
@@ -189,7 +188,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Deaths -->
                     <div class="col-lg-4">
                         <div class="card card-body" style="border: 3px solid rgba(224, 14, 14, 0.16)">
@@ -201,7 +199,6 @@
                           </div>
                         </div>
                     </div>
-
                     <!-- Recovered Cases -->
                     <div class="col-lg-4">
                         <div class="card card-body" style="border: 3px solid rgba(15, 171, 34, 0.16)">
@@ -213,7 +210,6 @@
                           </div>
                         </div>
                     </div>
-
                     <!-- US Map -->
                     <div class="col-lg-12">
                         <div class="card card-body">
@@ -224,7 +220,7 @@
                             </div>
                         </div>
                     </div>
-
+                    <!-- Pie Chart -->
                     <div class="col-lg-12">
                     <div class="card card-body">
                       <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Breakdown of Cases</h6>
@@ -237,78 +233,23 @@
                 </div>
             </div>
 
-            <!-- Map -->
+            <!-- Time Series -->
             <div class="col-lg-6">
               <div class="card card-body">
                   <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8">Time-Series Cases Distribution </h6>
                         <div id="metric-modal" style="height: 400px"></div>
                 </div>
             </div>
-            <!-- Map -->
-            <!-- Metric 1 -->
+            <!-- Radar Chart -->
             <div class="col-lg-6">
-                <!-- <div class="chart-wrapper"> -->
                 <div class="card card-body" id="raderp" style="height: 550px">
                   <h6 class="tx-uppercase tx-11 tx-spacing-1 tx-color-02 tx-semibold mg-b-8"> Deaths Age/Sex Distribution </h6>
                   <div id="rader"></div>
                 </div>
             </div>
-            <!-- Metric 1 -->
-
-            <!-- Metric 2 -->
-            <!-- <div class="col-lg-3">
-                <div class="chart-wrapper">
-                    <div class="chart-title">
-                        Recovered cases
-                    </div>
-
-                    <div class="chart-stage">
-                    <div id="recovered-cases"></div>
-                    </div>
-                </div>
-            </div> -->
-            <!-- Metric 2 -->
-
         </div>
 
     </div>
-
-    <!-- <div class="row" width="900">
-        <div class="col-lg-6">
-            <svg id="uschart3" width="650" height="500"> </svg>
-        </div>
-        <div class="col-lg-3" style="background-color:powderblue;height:500px;">
-            2nd block
-        </div>
-        <div class="col-lg-3" style="background-color:pink;height:500px;">
-            3rd block
-        </div>
-    </div>   -->
-
-    <!-- <div class="tabcontent" id="dimension_container">
-        <svg class="scree_svg" id="scree" width="650" height="550"></svg>
-        <svg class="bar_svg" id="dim_bar" width="650" height="550"></svg>
-    </div>
-
-    <div class="tabcontent" id="pcamds_container">
-        <svg class="pca_svg" id="pca_plot" width="650" height="550"></svg>
-        <svg class="mds_svg" id="mds_plot" width="650" height="550"></svg>
-    </div>
-
-    <div class="tabcontent" id="slider_map_container">
-        <svg class="legend_svg" id="legend_area_county" display="none"></svg>
-        <svg class="legend_svg" id="legend_area_state"></svg>
-        <svg class="map_svg" id="map_slide_county" width="870" height="550" display="none"></svg>
-        <svg class="map_svg" id="map_slide_state" width="870" height="550"></svg>
-        <svg class="radar_svg" id="radar_chart_state" width="300" height="500"></svg>
-
-        <fieldset style="transform: translate(-300px, 60px);">
-            <input type="radio" class="radio" name="maptype" onclick="radioChange()" value="state" id="state_btn" checked="checked" />
-            <label for="state_btn">State View</label>
-            <input type="radio" class="radio" name="maptype" onclick="radioChange()" value="county" id="county_btn"  />
-            <label for="county_btn">County View</label>
-        </fieldset>
-    </div> -->
       <div class="tabcontent" id="parallel_container">
         <div class="row">
           <div class="col-lg-7">
@@ -321,25 +262,19 @@
       </div>
 
 
-    <!-- <script src="https://d3js.org/topojson.v2.min.js"></script> -->
     <script src="http://d3js.org/colorbrewer.v1.min.js"></script>
     <script src="{{ url_for('static', filename='lib/js/d3.slider.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/js/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/js/bootstrap.min.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/js/crossfilter.js') }}"></script>
-    <script src="{{ url_for('static', filename='lib/js/dc.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/js/queue.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/js/keen.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='lib/js/legend.js') }}"></script>
+	  <script src="{{ url_for('static', filename='lib/js/legend.js') }}"></script>
     <script src="{{ url_for('static', filename='lib/js/radar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-
     <script src="{{ url_for('static', filename='lib/js/d3-legend.min.js') }}"></script>
     <script src="https://d3js.org/topojson.v1.min.js"></script>
-    <!-- <script src="//d3js.org/topojson.v1.min.js"></script> -->
-    <!-- <script src="{{ url_for('static', filename='lib/js/d3.tip.v0.6.3.js') }}"></script> -->
     <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
-    <!-- <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script> -->
 
 </body>
 </html>

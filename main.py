@@ -1,34 +1,22 @@
 import json
-import sys
-import numpy as np
-import pandas
-import pylab as plt
-#from bson import json_util
-from flask import Flask,render_template
-from scipy.spatial.distance import cdist
-from sklearn import manifold
-from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-from sklearn.metrics import pairwise_distances
-from sklearn.preprocessing import MinMaxScaler
-import pandas as pd
 import glob
-from flask import request
+import sys
 import datetime
+import numpy as np
+import pandas as pd
+import pylab as plt
+from flask import Flask,render_template
+from flask import request
 from sodapy import Socrata
-
 app = Flask(__name__)
 
 @app.route("/")
 def index():
     return render_template("dashboard.html")
-    # return render_template("test_ts.html")
-    # return render_template("test_pie.html")
 
 @app.route("/hospitals", methods = ['POST','GET'])
 def gethospitals():
-    #df = pandas.read_csv('Crime_Data_State.csv')
-    df = pandas.read_csv('HospitalBedsIndia.csv')
+    df = pd.read_csv('static/data/HospitalBedsIndia.csv')
     cols = json.dumps(list(df.columns))
     df = df.fillna(int(0))
     rows = json.dumps(df.to_dict(orient='records'), indent=2)
@@ -39,7 +27,7 @@ def gethospitals():
 def stackedarea():
     start,end = 25,40
     import pandas as pd
-    df = pd.read_csv('covid_19_india.csv')
+    df = pd.read_csv('static/data/covid_19_india.csv')
     states = df['State/UnionTerritory'].unique()
     regions,confirmed = [df[df['State/UnionTerritory'] == s] for s in states],[]
     for i,s in enumerate(states):
@@ -61,13 +49,6 @@ def stackedarea():
     data = { 'rows': rows, 'cols': cols}
     return data
 
-
-@app.route("/us_states_json")
-def us_states_json():
-    with open('us.json') as data_file:
-        data = json.load(data_file)
-    data = json.dumps(data)#, default=json_util.default)
-    return data
 
 # @app.route("/get_time_series_data/<state>/<column>")
 # def time_series_data(state, column):

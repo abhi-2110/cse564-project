@@ -271,87 +271,6 @@ d3.tip = function() {
     return tip
   };
 
-
-var squareLoadings
-var eigenValues
-var pcaData
-var mdsData
-
-var crimeReportData
-var crimeDataState = "";
-var crimeDataCounty
-var d3Us
-var dcUs
-
-var state_view =true;
-
-var year_ndx
-
-var state_abbr_dim
-var year_dim
-var crime_solved_dim
-var victim_sex_dim
-var victim_age_dim
-var victim_race_dim
-var prepetrator_sex_dim
-var prepetrator_age_dim
-var prepetrator_race_dim
-
-var timeChart
-var usChart
-//var victimRaceChart
-var weaponUsedChart
-var murderCountND
-var solvedCasesND
-var victimRacePieChart
-
-var countyName = {};
-var crimeByCounty = {};
-var murderByCounty = {};
-var rapeByCounty = {};
-var robberyByCounty = {};
-var assaultByCounty = {};
-var burglaryByCounty = {};
-var larencyByCounty = {};
-var theftByCounty = {};
-var arsonByCounty = {};
-var populationByCounty = {};
-
-var stateName = {};
-var crimeByState = {};
-var murderByState = {};
-var rapeByState = {};
-var robberyByState = {};
-var assaultByState = {};
-var burglaryByState = {};
-var larencyByState = {};
-var theftByState = {};
-var arsonByState = {};
-var populationByState = {};
-
-var minCrimeCounty = 10000000000;
-var minCrimeState = 10000000000;
-var maxCrimeCounty = 0;
-var maxCrimeState = 0;
-
-var fontFamily = 'verdana';
-var colorCounty;
-var colorState;
-
-var selectedSVGList = []
-
-var teamList = [];
-var selectedTeamId;
-var teamId;
-var teamRadarData = [];
-
-var countyList = [];
-var selectedCountyId;
-var countyId;
-var countyRadarData = [];
-
-var contrast = 'darkred'
-
 populate_parallel();
 drawStackedArea();
 var i, tabcontent, tablinks;
@@ -394,31 +313,6 @@ var colorscale = d3.scale.ordinal().range(["#CC333F","#00A0B0"]);
 
 //Legend titles
 var LegendOptions = ['Male','Female'];
-
-//Data
-// var d = [
-// 		  [
-// 			{axis:"Age 1-14 years",value:0.59},
-// 			{axis:"Age 15-24 years",value:0.56},
-// 			{axis:"Age 25-34 years",value:0.42},
-// 			{axis:"Age 35-44 years",value:0.34},
-// 			{axis:"Age 45-54 years",value:0.48},
-// 			{axis:"Age 55-64 years",value:0.14},
-// 			{axis:"Age 65-74 years",value:0.11},
-// 			{axis:"Age 75-84 years",value:0.05},
-// 			{axis:"Age Above 85 years",value:0.12},
-// 		  ],[
-//         {axis:"Age 1-14 years",value:0.39},
-//   			{axis:"Age 15-24 years",value:0.56},
-//   			{axis:"Age 25-34 years",value:0.12},
-//   			{axis:"Age 35-44 years",value:0.34},
-//   			{axis:"Age 45-54 years",value:0.38},
-//   			{axis:"Age 55-64 years",value:0.14},
-//   			{axis:"Age 65-74 years",value:0.81},
-//   			{axis:"Age 75-84 years",value:0.05},
-//   			{axis:"Age Above 85 years",value:0.12},
-// 		  ]
-// 		];
 
 //Options for the Radar chart, other than default
 var mycfg = {
@@ -712,22 +606,8 @@ function draw_pie_chart_wrapper(state, startDate='', endDate='')
 function draw_pie_chart(num_recovered, num_deaths, state)
 {
     console.log('pie chart ->', state, num_recovered,  num_deaths);
-    // var tip = d3.tip()
-    //     .attr('class', 'd3-tip')
-    //     .offset([-5, 0])
-    //     .html(function(d) {
-    //         var dataRow = countryById.get(d.properties.name);
-    //         if (dataRow) {
-    //             return dataRow.states + ": " + dataRow.mortality;
-    //         } else {
-    //             console.log("no dataRow", d);
-    //             return d.properties.name + ": 0";
-    //         }
-    //     });
-
     d3.select("#pie-chart").selectAll('svg').remove();
     var svg = d3.select("#pie-chart")
-
 
     var Tooltip = svg
         .append("div")
@@ -795,12 +675,6 @@ var data = [{"label":"Deaths", "value":num_deaths },
             {"label":"Recovered", "value":num_recovered },
             {"label":"Admitted", "value":num_deaths * 2.5 }];
 change(data);
-// console.log('rand', randomData(), data);
-// d3.select(".randomize")
-// 	.on("click", function(){
-// 		change(randomData());
-// 	});
-
 
 function change(data) {
     console.log(data, pie(data), key);
@@ -815,21 +689,6 @@ function change(data) {
         .attr("class", "slice")
         .on('mouseover', function(d)
         {
-            //   var tip = d3.tip()
-            // .attr('class', 'd3-tip')
-            // .offset([-5, 0])
-            // .html("djhbjhbjhb");
-            // .html(function(d) {
-            //     console.log('--', d);
-            //     return d.data.value;
-            //     // var dataRow = countryById.get(d.properties.name);
-            //     // if (dataRow) {
-            //     //     return dataRow.states + ": " + dataRow.mortality;
-            //     // } else {
-            //     //     console.log("no dataRow", d);
-            //     //     return d.properties.name + ": 0";
-            //     // }
-            // });
             console.log(d, d3.event.pageX, d3.event.pageY);
             Tooltip.html(d.data.value).style("opacity", 1).style("visibility", "visible")
             .style("top", (d3.event.pageY - 620) + "px")
@@ -1715,81 +1574,6 @@ function stateClick(d) {
     }
 }
 
-
-function regularizeRank(rank) {
-    return rank;//((31 - rank) / 30 * 100).toFixed(1);
-}
-
-
-function pushTeamRadarData(teamData){
-
-        teamData.forEach(function(d) {
-            //console.log("id" + d)
-            if (d.id == selectedTeamId) {
-             console.log('data matched');//Grab the team
-                var teamAxes = [];
-                teamAxes.push({axis: "Arsons", value: regularizeRank(d["Arsons_Rate"] * 8)});
-                teamAxes.push({axis: "Robberies", value: regularizeRank(d["Robberies_Rate"] )});
-                teamAxes.push({axis: "Larencies", value: regularizeRank(d["Larencies_Rate"]/20)});
-                teamAxes.push({axis: "Murders", value: regularizeRank(d["Murders_Rate"] * 15)});
-                teamAxes.push({axis: "Assaults", value: regularizeRank(d["Assaults_Rate"]/3)});
-                teamAxes.push({axis: "Rapes", value: regularizeRank(d["Rapes_Rate"] *5)});
-                teamAxes.push({axis: "Burglaries", value: regularizeRank(d["Burglaries_Rate"]/9)});
-                teamAxes.push({axis: "Thefts", value: regularizeRank(d["Thefts_Rate"]/2)});
-
-                teamRadarData.push({id: d.id, axes: teamAxes});
-            }
-        });
- //       console.log('data'+ teamRadarData[0].id);
-    }
-
-    function renderRadarChart() {
-        console.log("Tarun", "Inside renderRadarChart");
-        var radarChart = RadarChart.chart();
-        var defaultConfig = radarChart.config();
-        radarChart.config({w: 300, h: 300, levels: 4, maxValue: 100});
-        var svg = d3.select("#radar_chart_state");
-        var teamRadar = svg.selectAll("g.teamRadar").data([teamDataset(teamRadarData)]);
-        teamRadar.enter().append("g").classed("teamRadar", 1);
-        teamRadar.attr("transform", "translate(0,0)").call(radarChart);
-        renderLengend(teamList);
-    //    document.getElementById("radar_chart_state").style.visibility = "visible";
-}
-
-//Draw the lengend of the radar chart
-function renderLengend(teamList) {
-    var colorscale = d3.scale.category20();
-
-    //Initiate Legend
-    var svg = d3.select("#radar_chart_state");
-    var legend = svg.select(".teamRadar").selectAll("g.legend-tag").data(teamList).enter()
-        .append("g")
-        .attr("class", "legend-tag")
-        .attr("height", 100)
-        .attr("width", 200)
-        .attr("transform", "translate(0,350)") ;
-
-    //Create colour squares
-    legend.selectAll("rect").data(teamList).enter()
-        .append("rect")
-        .attr("x", 0)
-        .attr("y", function(d, i){ return i * 20;})
-        .attr("width", 10)
-        .attr("height", 10)
-        .style("fill", function(d, i){ return colorscale(i);});
-
-    //Create text next to squares
-    legend.selectAll(".legend-team").data(teamList).enter()
-        .append("text")
-        .attr("class", "legend-team")
-        .attr("x", 12)
-        .attr("y", function(d, i){ return i * 20 + 9;})
-        .attr("font-size", "10px")
-        .attr("fill", "#737373")
-        .text(function(d) {  return state_view ? stateName[d] : countyName[d]; });
-}
-
-
 function populate_parallel() {
     var margin = {top: 30, right: 40, bottom: 20, left: 130};
     var width = 1050 - margin.left - margin.right;
@@ -2127,54 +1911,14 @@ function drawStackedArea() {
      });
 }
 
-function radioChange(){
-    console.log('radio hit')
-    state = document.getElementById('map_slide_state')
-    county = document.getElementById('map_slide_county')
-    legend_state = document.getElementById('legend_area_state')
-    legend_county = document.getElementById('legend_area_county')
-     d3.selectAll(".teamRadar").remove();
-     teamRadarData = []
-     teamList= []
-
-    for (var i = 0; i < selectedSVGList.length; i++) {
-        if (state_view) {
-            selectedSVGList[i].svg.style("fill", function(d){ return colorState(crimeByState[selectedSVGList[i].id])});
-        } else {
-            selectedSVGList[i].svg.style("fill", function(d){ return colorCounty(crimeByCounty[selectedSVGList[i].id])});
-        }
-    }
-
-    selectedSVGList = [];
-
-    if(document.getElementById('state_btn').checked) {
-        console.log('state checked')
-        state_view = true;
-        state.style.display = 'block';
-        county.style.display ='none';
-        legend_state.style.display = 'block';
-        legend_county.style.display = 'none';
-    } else {
-        console.log('county checked')
-        state_view = false;
-        county.style.display = 'block';
-        state.style.display = 'none';
-        legend_county.style.display = 'block';
-        legend_state.style.display = 'none';
-    }
-}
-
 function openTabClick(evt, container, index) {
 
-//    console.log("Tarun", index);
     var i, tabcontent, tablinks;
-
     // Get all elements with class="tabcontent" and hide them
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
         tabcontent[i].style.display = "none";
     }
-
     // Get all elements with class="tablinks" and remove the class "active"
     tablinks = document.getElementsByClassName("tablinks");
     for (i = 0; i < tablinks.length; i++) {
